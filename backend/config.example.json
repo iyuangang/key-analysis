@@ -1,0 +1,16 @@
+{
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "username": "user",
+    "password": "password",
+    "database": "dbname"
+  },
+  "server": {
+    "host": "localhost",
+    "port": 8000
+  },
+  "cors": {
+    "origins": ["http://localhost:5173"]
+  }
+} 
