@@ -6,6 +6,14 @@
     "password": "password",
     "database": "dbname"
   },
+  "redis": {
+    "host": "localhost",
+    "port": 6379,
+    "password": null,
+    "db": 0,
+    "prefix": "key_analyzer:",
+    "ttl": 3600
+  },
   "server": {
     "host": "localhost",
     "port": 8000

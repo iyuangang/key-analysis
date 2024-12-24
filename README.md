@@ -20,6 +20,7 @@ A web-based system for analyzing and visualizing cryptographic key generation st
 - FastAPI (Python web framework)
 - SQLAlchemy (ORM)
 - PostgreSQL (Database)
+- Redis (Caching)
 - Pandas & NumPy (Data analysis)
 - JWT Authentication
 - CORS support
@@ -38,6 +39,7 @@ A web-based system for analyzing and visualizing cryptographic key generation st
 - Python 3.8+
 - Node.js 16+
 - PostgreSQL 12+
+- Redis 6+
 
 ### Backend Setup
 1. Create and activate virtual environment:

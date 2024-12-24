@@ -8,11 +8,14 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from .database import get_db
 from . import models
+from .utils.redis import redis_client
+from .utils.debug import debug
 
 # 配置
 SECRET_KEY = "your-secret-key"  # 在生产环境中应该使用环境变量
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+USER_CACHE_TTL = 300  # 用户缓存5分钟
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -61,19 +64,76 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 
 def get_user(db: Session, username: str):
-    return db.query(models.User).filter(models.User.username == username).first()
+    # 尝试从缓存获取用户
+    cache_key = f"user:{username}"
+    debug.log(f"Attempting to get user from cache: {username}")
+    cached_user = redis_client.get(cache_key)
+    if cached_user:
+        debug.log(f"User cache hit: {username}")
+        return models.User(**cached_user)
+
+    debug.log(f"User cache miss: {username}")
+    user = db.query(models.User).filter(models.User.username == username).first()
+    if user:
+        # 缓存用户数据
+        user_data = {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "full_name": user.full_name,
+            "disabled": user.disabled,
+            "hashed_password": user.hashed_password,
+        }
+        debug.log(f"Caching user data for: {username}")
+        redis_client.set(cache_key, user_data, ttl=USER_CACHE_TTL)
+        debug.log(f"User data cached successfully for: {username}")
+    return user
 
 
 def authenticate_user(db: Session, username: str, password: str):
+    # 尝试从缓存获取认证结果
+    cache_key = f"auth:{username}:{get_password_hash(password)}"
+    debug.log(f"Attempting to get auth result from cache: {username}")
+    cached_result = redis_client.get(cache_key)
+    if cached_result is not None:
+        debug.log(f"Auth cache hit: {username}")
+        return models.User(**cached_result) if cached_result else False
+
+    debug.log(f"Auth cache miss: {username}")
     user = get_user(db, username)
     if not user:
+        debug.log(f"User not found: {username}")
+        redis_client.set(cache_key, None, ttl=USER_CACHE_TTL)
         return False
     if not verify_password(password, user.hashed_password):
+        debug.log(f"Invalid password for user: {username}")
+        redis_client.set(cache_key, None, ttl=USER_CACHE_TTL)
         return False
+
+    # 缓存认证结果
+    user_data = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "full_name": user.full_name,
+        "disabled": user.disabled,
+        "hashed_password": user.hashed_password,
+    }
+    debug.log(f"Caching auth result for: {username}")
+    redis_client.set(cache_key, user_data, ttl=USER_CACHE_TTL)
+    debug.log(f"Auth result cached successfully for: {username}")
     return user
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
+    # 尝试从缓存获取token解析结果
+    cache_key = f"token:{token}"
+    cached_user = redis_client.get(cache_key)
+    if cached_user:
+        debug.log(f"Token cache hit")
+        return User(**cached_user)
+
+    debug.log(f"Token cache miss")
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -93,13 +153,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     if user is None:
         raise credentials_exception
 
-    # 转换为 Pydantic 模型
-    return User(
-        username=user.username,
-        email=user.email,
-        full_name=user.full_name,
-        disabled=user.disabled,
-    )
+    # 缓存token解析结果
+    user_data = {
+        "username": user.username,
+        "email": user.email,
+        "full_name": user.full_name,
+        "disabled": user.disabled,
+    }
+    redis_client.set(cache_key, user_data, ttl=ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+    return User(**user_data)
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):

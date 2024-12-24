@@ -9,5 +9,13 @@ class Debug:
         if self.enabled:
             print("[DEBUG]", *args)
 
+    def error(self, *args):
+        if self.enabled:
+            print("[ERROR]", *args)
+
+    def warn(self, *args):
+        if self.enabled:
+            print("[WARN]", *args)
+
 
 debug = Debug()

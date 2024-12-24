@@ -9,6 +9,7 @@ import pytz
 import json
 from ..config import current_config
 from ..utils.debug import debug
+from ..utils.redis import redis_client
 
 
 class KeyAnalyzer:
@@ -19,6 +20,13 @@ class KeyAnalyzer:
     def get_recent_keys(
         self, start_time: Optional[int] = None, end_time: Optional[int] = None
     ) -> List[Dict]:
+        cache_key = f"recent_keys:{start_time}:{end_time}"
+        cached_data = redis_client.get(cache_key)
+        if cached_data:
+            debug.log(f"Recent keys cache hit")
+            return cached_data
+
+        debug.log(f"Recent keys cache miss")
         debug.log(f"Getting recent keys for time range: {start_time} to {end_time}")
         # 如果没有指定时间范围，默认使用最近24小时
         if start_time is None or end_time is None:
@@ -37,11 +45,21 @@ class KeyAnalyzer:
         )
         results = query.all()
         debug.log(f"Found {len(results)} recent keys")
-        return [self._format_key_info(key) for key in results]
+        formatted_results = [self._format_key_info(key) for key in results]
+        redis_client.set(cache_key, formatted_results)
+        return formatted_results
 
     def get_high_score_keys(
         self, start_time: Optional[int] = None, end_time: Optional[int] = None
     ) -> List[Dict]:
+        cache_key = f"high_score_keys:{start_time}:{end_time}"
+        cached_data = redis_client.get(cache_key)
+        if cached_data:
+            debug.log(f"High score keys cache hit")
+            return cached_data
+
+        debug.log(f"High score keys cache miss")
+        debug.log(f"Fetching high score keys from database")
         # 构建基础查询
         query = self.db.query(KeyInfo).filter(KeyInfo.score > 400)
 
@@ -52,18 +70,27 @@ class KeyAnalyzer:
             query = query.filter(KeyInfo.created_at.between(start, end))
 
         query = query.order_by(KeyInfo.score.desc()).limit(10)
-        return [self._format_key_info(key) for key in query.all()]
+        formatted_results = [self._format_key_info(key) for key in query.all()]
+        redis_client.set(cache_key, formatted_results)
+        return formatted_results
 
     def get_statistics(
         self, start_time: Optional[int] = None, end_time: Optional[int] = None
     ) -> Dict:
+        cache_key = f"statistics:{start_time}:{end_time}"
+        cached_data = redis_client.get(cache_key)
+        if cached_data:
+            debug.log(f"Statistics cache hit")
+            return cached_data
+
+        debug.log(f"Statistics cache miss")
         debug.log(f"Getting statistics for time range: {start_time} to {end_time}")
         # 获取所有数据
         all_data_query = self.db.query(KeyInfo)
         all_df = pd.read_sql(all_data_query.statement, self.db.bind)
         debug.log(f"Total records: {len(all_df)}")
 
-        # 确定时间范��
+        # 确定时间范围
         if start_time is None or end_time is None:
             end = datetime.now(self.utc)
             start = end - timedelta(days=1)
@@ -124,7 +151,7 @@ class KeyAnalyzer:
         # 确保DataFrame中的时间戳使用UTC时区
         df["created_at"] = pd.to_datetime(df["created_at"]).dt.tz_convert("UTC")
 
-        # 分离数值列用于相关性分析
+        # 分离数值列用��相关性分析
         numeric_columns = [
             "repeat_letter_score",
             "increasing_letter_score",
@@ -226,7 +253,7 @@ class KeyAnalyzer:
         # 根据时间范围长度调整采样频率
         time_delta = end_time - start_time
         if time_delta.days > 7:
-            freq = "D"  # 超过7天使用天为单位
+            freq = "D"  # ��过7天使用天为单位
         elif time_delta.days > 2:
             freq = "6h"  # 2-7天使用6小时为单位
         else:
@@ -295,13 +322,15 @@ class KeyAnalyzer:
         debug.log("\nFormatted Trends Data:")
         debug.log(json.dumps(trends, indent=2))
 
-        return {
+        result = {
             "score_distribution": self._get_score_distribution(df),
             "correlation_matrix": self._get_correlation_matrix(numeric_df),
             "summary_stats": summary_stats,
             "score_types_stats": self._get_score_types_stats(df),
             "trends": trends,
         }
+        redis_client.set(cache_key, result)
+        return result
 
     def _format_key_info(self, key: KeyInfo) -> Dict:
         return {
