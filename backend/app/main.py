@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordRequestForm
 from .database import get_db
 from .config import current_config
@@ -21,6 +21,7 @@ from typing import Optional
 from datetime import timedelta
 import uuid
 from .utils.debug import debug
+from sqlalchemy import select
 
 
 class RegisterUser(BaseModel):
@@ -46,9 +47,9 @@ app.add_middleware(
 
 @app.post("/token", response_model=Token)
 async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)
 ):
-    user = authenticate_user(db, form_data.username, form_data.password)
+    user = await authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -74,10 +75,10 @@ async def get_recent_keys(
     current_user: UserSchema = Depends(get_current_active_user),
     start: Optional[int] = None,
     end: Optional[int] = None,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     analyzer = KeyAnalyzer(db)
-    return analyzer.get_recent_keys(start_time=start, end_time=end)
+    return await analyzer.get_recent_keys(start_time=start, end_time=end)
 
 
 @app.get("/keys/high-score")
@@ -85,10 +86,10 @@ async def get_high_score_keys(
     current_user: UserSchema = Depends(get_current_active_user),
     start: Optional[int] = None,
     end: Optional[int] = None,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     analyzer = KeyAnalyzer(db)
-    return analyzer.get_high_score_keys(start_time=start, end_time=end)
+    return await analyzer.get_high_score_keys(start_time=start, end_time=end)
 
 
 @app.get("/statistics")
@@ -96,25 +97,28 @@ async def get_statistics(
     current_user: UserSchema = Depends(get_current_active_user),
     start: Optional[int] = None,
     end: Optional[int] = None,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     analyzer = KeyAnalyzer(db)
-    return analyzer.get_statistics(start_time=start, end_time=end)
+    return await analyzer.get_statistics(start_time=start, end_time=end)
 
 
 @app.post("/auth/register")
-async def register(user_data: RegisterUser, db: Session = Depends(get_db)):
+async def register(user_data: RegisterUser, db: AsyncSession = Depends(get_db)):
     # 检查用户名是否已存在
-    if db.query(User).filter(User.username == user_data.username).first():
+    result = await db.execute(select(User).where(User.username == user_data.username))
+    if result.scalar_one_or_none():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already registered",
         )
 
     # 检查邮箱是否已存在
-    if db.query(User).filter(User.email == user_data.email).first():
+    result = await db.execute(select(User).where(User.email == user_data.email))
+    if result.scalar_one_or_none():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
         )
 
     # 创建新用户
@@ -126,6 +130,6 @@ async def register(user_data: RegisterUser, db: Session = Depends(get_db)):
     )
 
     db.add(user)
-    db.commit()
+    await db.commit()
 
     return {"message": "User registered successfully"}

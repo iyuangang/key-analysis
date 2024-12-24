@@ -5,7 +5,8 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from .database import get_db
 from . import models
 from .utils.redis import redis_client
@@ -63,7 +64,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
-def get_user(db: Session, username: str):
+async def get_user(db: AsyncSession, username: str):
     # 尝试从缓存获取用户
     cache_key = f"user:{username}"
     debug.log(f"Attempting to get user from cache: {username}")
@@ -73,7 +74,10 @@ def get_user(db: Session, username: str):
         return models.User(**cached_user)
 
     debug.log(f"User cache miss: {username}")
-    user = db.query(models.User).filter(models.User.username == username).first()
+    result = await db.execute(
+        select(models.User).where(models.User.username == username)
+    )
+    user = result.scalar_one_or_none()
     if user:
         # 缓存用户数据
         user_data = {
@@ -90,7 +94,7 @@ def get_user(db: Session, username: str):
     return user
 
 
-def authenticate_user(db: Session, username: str, password: str):
+async def authenticate_user(db: AsyncSession, username: str, password: str):
     # 尝试从缓存获取认证结果
     cache_key = f"auth:{username}:{get_password_hash(password)}"
     debug.log(f"Attempting to get auth result from cache: {username}")
@@ -100,7 +104,7 @@ def authenticate_user(db: Session, username: str, password: str):
         return models.User(**cached_result) if cached_result else False
 
     debug.log(f"Auth cache miss: {username}")
-    user = get_user(db, username)
+    user = await get_user(db, username)
     if not user:
         debug.log(f"User not found: {username}")
         redis_client.set(cache_key, None, ttl=USER_CACHE_TTL)
@@ -148,20 +152,25 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
 
-    db = next(get_db())
-    user = get_user(db, username=token_data.username)
-    if user is None:
-        raise credentials_exception
+    async for db in get_db():
+        try:
+            user = await get_user(db, username=token_data.username)
+            if user is None:
+                raise credentials_exception
 
-    # 缓存token解析结果
-    user_data = {
-        "username": user.username,
-        "email": user.email,
-        "full_name": user.full_name,
-        "disabled": user.disabled,
-    }
-    redis_client.set(cache_key, user_data, ttl=ACCESS_TOKEN_EXPIRE_MINUTES * 60)
-    return User(**user_data)
+            # 缓存token解析结果
+            user_data = {
+                "username": user.username,
+                "email": user.email,
+                "full_name": user.full_name,
+                "disabled": user.disabled,
+            }
+            redis_client.set(cache_key, user_data, ttl=ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+            return User(**user_data)
+        finally:
+            await db.close()
+
+    raise credentials_exception
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):

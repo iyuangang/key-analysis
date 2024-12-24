@@ -1,10 +1,10 @@
 import pandas as pd
 import numpy as np
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict, List, Optional
 from ..models import KeyInfo
 from datetime import datetime, timedelta
-from sqlalchemy import text, func
+from sqlalchemy import text, func, select
 import pytz
 import json
 from ..config import current_config
@@ -13,11 +13,11 @@ from ..utils.redis import redis_client
 
 
 class KeyAnalyzer:
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
         self.utc = pytz.UTC
 
-    def get_recent_keys(
+    async def get_recent_keys(
         self, start_time: Optional[int] = None, end_time: Optional[int] = None
     ) -> List[Dict]:
         cache_key = f"recent_keys:{start_time}:{end_time}"
@@ -37,19 +37,23 @@ class KeyAnalyzer:
             end = datetime.fromtimestamp(end_time / 1000, self.utc)
 
         debug.log(f"Processed time range: {start} to {end}")
-        query = (
-            self.db.query(KeyInfo)
-            .filter(KeyInfo.created_at.between(start, end))
+        # 转换为 naive datetime 用于数据库查询
+        start = start.replace(tzinfo=None)
+        end = end.replace(tzinfo=None)
+
+        result = await self.db.execute(
+            select(KeyInfo)
+            .where(KeyInfo.created_at.between(start, end))
             .order_by(KeyInfo.id.desc())
             .limit(10)
         )
-        results = query.all()
+        results = result.scalars().all()
         debug.log(f"Found {len(results)} recent keys")
         formatted_results = [self._format_key_info(key) for key in results]
         redis_client.set(cache_key, formatted_results)
         return formatted_results
 
-    def get_high_score_keys(
+    async def get_high_score_keys(
         self, start_time: Optional[int] = None, end_time: Optional[int] = None
     ) -> List[Dict]:
         cache_key = f"high_score_keys:{start_time}:{end_time}"
@@ -60,21 +64,26 @@ class KeyAnalyzer:
 
         debug.log(f"High score keys cache miss")
         debug.log(f"Fetching high score keys from database")
-        # 构建基础查询
-        query = self.db.query(KeyInfo).filter(KeyInfo.score > 400)
+        # 构建基本查询
+        query = select(KeyInfo).where(KeyInfo.score > 400)
 
         # 添加时间范围过滤
         if start_time is not None and end_time is not None:
             start = datetime.fromtimestamp(start_time / 1000, self.utc)
             end = datetime.fromtimestamp(end_time / 1000, self.utc)
-            query = query.filter(KeyInfo.created_at.between(start, end))
+            # 转换为 naive datetime
+            start = start.replace(tzinfo=None)
+            end = end.replace(tzinfo=None)
+            query = query.where(KeyInfo.created_at.between(start, end))
 
-        query = query.order_by(KeyInfo.score.desc()).limit(10)
-        formatted_results = [self._format_key_info(key) for key in query.all()]
+        result = await self.db.execute(query.order_by(KeyInfo.score.desc()).limit(10))
+        formatted_results = [
+            self._format_key_info(key) for key in result.scalars().all()
+        ]
         redis_client.set(cache_key, formatted_results)
         return formatted_results
 
-    def get_statistics(
+    async def get_statistics(
         self, start_time: Optional[int] = None, end_time: Optional[int] = None
     ) -> Dict:
         cache_key = f"statistics:{start_time}:{end_time}"
@@ -86,8 +95,24 @@ class KeyAnalyzer:
         debug.log(f"Statistics cache miss")
         debug.log(f"Getting statistics for time range: {start_time} to {end_time}")
         # 获取所有数据
-        all_data_query = self.db.query(KeyInfo)
-        all_df = pd.read_sql(all_data_query.statement, self.db.bind)
+        all_data_query = select(KeyInfo)
+        result = await self.db.execute(all_data_query)
+        all_df = pd.DataFrame(
+            [
+                {
+                    "id": row.id,
+                    "created_at": row.created_at,
+                    "fingerprint": row.fingerprint,
+                    "repeat_letter_score": row.repeat_letter_score,
+                    "increasing_letter_score": row.increasing_letter_score,
+                    "decreasing_letter_score": row.decreasing_letter_score,
+                    "magic_letter_score": row.magic_letter_score,
+                    "score": row.score,
+                    "unique_letters_count": row.unique_letters_count,
+                }
+                for row in result.scalars().all()
+            ]
+        )
         debug.log(f"Total records: {len(all_df)}")
 
         # 确定时间范围
@@ -98,13 +123,31 @@ class KeyAnalyzer:
             start = datetime.fromtimestamp(start_time / 1000, self.utc)
             end = datetime.fromtimestamp(end_time / 1000, self.utc)
 
+        # 转换为 naive datetime
+        start = start.replace(tzinfo=None)
+        end = end.replace(tzinfo=None)
+
         debug.log(f"Processed time range: {start} to {end}")
 
         # 获取当前时间段的数据
-        current_query = self.db.query(KeyInfo).filter(
-            KeyInfo.created_at.between(start, end)
+        current_query = select(KeyInfo).where(KeyInfo.created_at.between(start, end))
+        result = await self.db.execute(current_query)
+        current_df = pd.DataFrame(
+            [
+                {
+                    "id": row.id,
+                    "created_at": row.created_at,
+                    "fingerprint": row.fingerprint,
+                    "repeat_letter_score": row.repeat_letter_score,
+                    "increasing_letter_score": row.increasing_letter_score,
+                    "decreasing_letter_score": row.decreasing_letter_score,
+                    "magic_letter_score": row.magic_letter_score,
+                    "score": row.score,
+                    "unique_letters_count": row.unique_letters_count,
+                }
+                for row in result.scalars().all()
+            ]
         )
-        current_df = pd.read_sql(current_query.statement, self.db.bind)
         debug.log(f"Current period records: {len(current_df)}")
 
         # 使用正确的数据集进行统计
@@ -151,7 +194,7 @@ class KeyAnalyzer:
         # 确保DataFrame中的时间戳使用UTC时区
         df["created_at"] = pd.to_datetime(df["created_at"]).dt.tz_convert("UTC")
 
-        # 分离数值列用��相关性分析
+        # 分离数值列用于相关性分析
         numeric_columns = [
             "repeat_letter_score",
             "increasing_letter_score",
@@ -189,10 +232,26 @@ class KeyAnalyzer:
             time_delta = end - start
             previous_start = start - time_delta
             previous_end = start
-            previous_query = self.db.query(KeyInfo).filter(
+            previous_query = select(KeyInfo).where(
                 KeyInfo.created_at.between(previous_start, previous_end)
             )
-            previous_df = pd.read_sql(previous_query.statement, self.db.bind)
+            result = await self.db.execute(previous_query)
+            previous_df = pd.DataFrame(
+                [
+                    {
+                        "id": row.id,
+                        "created_at": row.created_at,
+                        "fingerprint": row.fingerprint,
+                        "repeat_letter_score": row.repeat_letter_score,
+                        "increasing_letter_score": row.increasing_letter_score,
+                        "decreasing_letter_score": row.decreasing_letter_score,
+                        "magic_letter_score": row.magic_letter_score,
+                        "score": row.score,
+                        "unique_letters_count": row.unique_letters_count,
+                    }
+                    for row in result.scalars().all()
+                ]
+            )
         else:
             # 如果是全部数据使用同样的数据作为对比
             previous_df = all_df
@@ -253,7 +312,7 @@ class KeyAnalyzer:
         # 根据时间范围长度调整采样频率
         time_delta = end_time - start_time
         if time_delta.days > 7:
-            freq = "D"  # ��过7天使用天为单位
+            freq = "D"  # 过7天使用天为单位
         elif time_delta.days > 2:
             freq = "6h"  # 2-7天使用6小时为单位
         else:
