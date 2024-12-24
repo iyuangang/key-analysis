@@ -1,7 +1,21 @@
-export const isDev = process.env.NODE_ENV === 'development'
+// 获取当前环境
+const ENV = import.meta.env.MODE || 'development'
 
-export const config = {
-  apiBaseUrl: isDev ? 'http://localhost:8000/api' : '/api',
-  debug: isDev,
-  logLevel: isDev ? 'debug' : 'error'
-} 
+// 环境配置
+const config = {
+  development: {
+    debug: true,
+    api: {
+      baseURL: '/api'
+    }
+  },
+  production: {
+    debug: false,
+    api: {
+      baseURL: 'https://your-production-domain.com'
+    }
+  }
+}
+
+// 获取当前环境的配置
+export const currentConfig = config[ENV as keyof typeof config] 

@@ -15,7 +15,8 @@
     "echarts": "^5.4.3",
     "naive-ui": "^2.37.3",
     "vfonts": "^0.0.3",
-    "vue": "^3.3.0"
+    "vue": "^3.3.0",
+    "vue-router": "^4.5.0"
   },
   "devDependencies": {
     "@types/node": "^20.8.0",

@@ -8,3 +8,7 @@ __pycache__/
 node_modules/
 
 config.json
+
+# Environment
+.env
+*.env

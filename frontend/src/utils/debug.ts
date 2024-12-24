@@ -1,25 +1,21 @@
-import { config } from '../config'
+import { currentConfig } from '../config'
 
 export const debug = {
   log: (...args: any[]) => {
-    if (config.debug) {
+    if (currentConfig.debug) {
       console.log(...args)
     }
   },
   
-  error: (...args: any[]) => {
-    console.error(...args)
-  },
-  
   warn: (...args: any[]) => {
-    if (config.debug) {
+    if (currentConfig.debug) {
       console.warn(...args)
     }
   },
   
-  trace: (message: string) => {
-    if (config.debug) {
-      console.trace(message)
+  error: (...args: any[]) => {
+    if (currentConfig.debug) {
+      console.error(...args)
     }
   }
 } 

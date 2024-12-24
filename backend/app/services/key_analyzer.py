@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from sqlalchemy import text, func
 import pytz
 import json
+from ..config import current_config
+from ..utils.debug import debug
 
 
 class KeyAnalyzer:
@@ -17,6 +19,7 @@ class KeyAnalyzer:
     def get_recent_keys(
         self, start_time: Optional[int] = None, end_time: Optional[int] = None
     ) -> List[Dict]:
+        debug.log(f"Getting recent keys for time range: {start_time} to {end_time}")
         # 如果没有指定时间范围，默认使用最近24小时
         if start_time is None or end_time is None:
             end = datetime.now(self.utc)
@@ -25,13 +28,16 @@ class KeyAnalyzer:
             start = datetime.fromtimestamp(start_time / 1000, self.utc)
             end = datetime.fromtimestamp(end_time / 1000, self.utc)
 
+        debug.log(f"Processed time range: {start} to {end}")
         query = (
             self.db.query(KeyInfo)
             .filter(KeyInfo.created_at.between(start, end))
             .order_by(KeyInfo.id.desc())
             .limit(10)
         )
-        return [self._format_key_info(key) for key in query.all()]
+        results = query.all()
+        debug.log(f"Found {len(results)} recent keys")
+        return [self._format_key_info(key) for key in results]
 
     def get_high_score_keys(
         self, start_time: Optional[int] = None, end_time: Optional[int] = None
@@ -51,11 +57,13 @@ class KeyAnalyzer:
     def get_statistics(
         self, start_time: Optional[int] = None, end_time: Optional[int] = None
     ) -> Dict:
+        debug.log(f"Getting statistics for time range: {start_time} to {end_time}")
         # 获取所有数据
         all_data_query = self.db.query(KeyInfo)
         all_df = pd.read_sql(all_data_query.statement, self.db.bind)
+        debug.log(f"Total records: {len(all_df)}")
 
-        # 确定时间范围
+        # 确定时间范��
         if start_time is None or end_time is None:
             end = datetime.now(self.utc)
             start = end - timedelta(days=1)
@@ -63,30 +71,55 @@ class KeyAnalyzer:
             start = datetime.fromtimestamp(start_time / 1000, self.utc)
             end = datetime.fromtimestamp(end_time / 1000, self.utc)
 
+        debug.log(f"Processed time range: {start} to {end}")
+
         # 获取当前时间段的数据
         current_query = self.db.query(KeyInfo).filter(
             KeyInfo.created_at.between(start, end)
         )
         current_df = pd.read_sql(current_query.statement, self.db.bind)
-
-        # 获取上一个时间段的数据
-        if start_time is None or end_time is None:
-            # 默认情况下，对比前一天
-            previous_start = start - timedelta(days=1)
-            previous_end = start
-        else:
-            # 自定义时间范围，使用相同长度的前一个时间段
-            time_delta = end - start
-            previous_start = start - time_delta
-            previous_end = start
-
-        previous_query = self.db.query(KeyInfo).filter(
-            KeyInfo.created_at.between(previous_start, previous_end)
-        )
-        previous_df = pd.read_sql(previous_query.statement, self.db.bind)
+        debug.log(f"Current period records: {len(current_df)}")
 
         # 使用正确的数据集进行统计
         df = all_df if start_time is None or end_time is None else current_df
+        if df.empty:
+            debug.log("Warning: No data available for the selected period")
+            # 返回空的统计数据结构
+            return {
+                "score_distribution": {
+                    "histogram": [],
+                    "bins": [],
+                    "mean": 0,
+                    "median": 0,
+                    "std": 0,
+                    "min": 0,
+                    "max": 0,
+                    "q1": 0,
+                    "q3": 0,
+                    "total_count": 0,
+                    "qualified_count": 0,
+                },
+                "correlation_matrix": {},
+                "summary_stats": {
+                    "score": {
+                        "mean": 0,
+                        "max": 0,
+                        "count": 0,
+                        "qualified_rate": 0,
+                        "mean_trend": 0,
+                        "max_trend": 0,
+                        "count_trend": 0,
+                        "qualified_trend": 0,
+                    }
+                },
+                "score_types_stats": {},
+                "trends": {
+                    "time_format": "YYYY-MM-DD HH:mm",
+                    "avg_scores": [],
+                    "max_scores": [],
+                    "counts": [],
+                },
+            }
 
         # 确保DataFrame中的时间戳使用UTC时区
         df["created_at"] = pd.to_datetime(df["created_at"]).dt.tz_convert("UTC")
@@ -124,7 +157,20 @@ class KeyAnalyzer:
             ),
         }
 
-        # 对比数据使用前一个时间段或全部历史数据
+        # 计算上一个时间段的数据
+        if start_time is not None and end_time is not None:
+            time_delta = end - start
+            previous_start = start - time_delta
+            previous_end = start
+            previous_query = self.db.query(KeyInfo).filter(
+                KeyInfo.created_at.between(previous_start, previous_end)
+            )
+            previous_df = pd.read_sql(previous_query.statement, self.db.bind)
+        else:
+            # 如果是全部数据使用同样的数据作为对比
+            previous_df = all_df
+
+        # 对数据使用前一个时间段或全部历史数据
         compare_df = (
             previous_df if start_time is not None and end_time is not None else all_df
         )
@@ -182,9 +228,9 @@ class KeyAnalyzer:
         if time_delta.days > 7:
             freq = "D"  # 超过7天使用天为单位
         elif time_delta.days > 2:
-            freq = "6H"  # 2-7天使用6小时为单位
+            freq = "6h"  # 2-7天使用6小时为单位
         else:
-            freq = "H"  # 2天内使用小时为单位
+            freq = "h"  # 2天内使用小时为单位
 
         time_index = pd.date_range(
             start=start_time, end=end_time, freq=freq, tz=self.utc
@@ -208,21 +254,21 @@ class KeyAnalyzer:
         # 确保有完整的数据
         hourly_stats = hourly_stats.reindex(time_index, fill_value=0)
 
-        # 调试信息
-        print("\nTime Range:")
-        print(f"Start: {start_time}")
-        print(f"End: {end_time}")
-        print(f"Time Delta: {time_delta}")
-        print(f"Sample Frequency: {freq}")
-        print("\nOriginal Data Sample:")
-        print(df["created_at"].head())
-        print("\nHourly Stats Sample:")
-        print(hourly_stats.head())
+        # 仅在调试模式下输出辅助信息
+        debug.log("\nTime Range:")
+        debug.log(f"Start: {start_time}")
+        debug.log(f"End: {end_time}")
+        debug.log(f"Time Delta: {time_delta}")
+        debug.log(f"Sample Frequency: {freq}")
+        debug.log("\nOriginal Data Sample:")
+        debug.log(df["created_at"].head())
+        debug.log("\nHourly Stats Sample:")
+        debug.log(hourly_stats.head())
 
         # 格式化趋势数据
-        time_format = "%Y-%m-%d %H:%M" if freq in ["H", "6H"] else "%Y-%m-%d"
+        time_format = "%Y-%m-%d %H:%M" if freq in ["h", "6h"] else "%Y-%m-%d"
         trends = {
-            "time_format": "YYYY-MM-DD HH:mm" if freq in ["H", "6H"] else "YYYY-MM-DD",
+            "time_format": "YYYY-MM-DD HH:mm" if freq in ["h", "6h"] else "YYYY-MM-DD",
             "avg_scores": [
                 {
                     "time": idx.strftime(time_format),
@@ -246,8 +292,8 @@ class KeyAnalyzer:
             ],
         }
 
-        print("\nFormatted Trends Data:")
-        print(json.dumps(trends, indent=2))
+        debug.log("\nFormatted Trends Data:")
+        debug.log(json.dumps(trends, indent=2))
 
         return {
             "score_distribution": self._get_score_distribution(df),

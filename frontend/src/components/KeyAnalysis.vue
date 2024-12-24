@@ -94,6 +94,7 @@ import {
 import { getRecentKeys, getHighScoreKeys, getStatistics } from '../services/api'
 import DataTable from './DataTable.vue'
 import dayjs from 'dayjs'
+import { debug } from '../utils/debug'
 
 const message = useMessage()
 const scoreDistChart = ref()
@@ -171,22 +172,45 @@ const refreshData = async () => {
   loading.value = true
   try {
     const range = actualDateRange.value
+    debug.log('Fetching data with range:', range)
+    
     const [recentData, highScoreData, statsData] = await Promise.all([
       getRecentKeys(range),
       getHighScoreKeys(range),
       getStatistics(range)
     ])
     
-    recentKeys.value = Array.isArray(recentData) ? recentData : []
-    highScoreKeys.value = Array.isArray(highScoreData) ? highScoreData : []
-    
-    if (statsData) {
-      initCharts(statsData)
+    debug.log('Received data:', {
+      recentData,
+      highScoreData,
+      statsData
+    })
+
+    // 检查数据是否有效
+    if (!recentData || !Array.isArray(recentData)) {
+      debug.warn('Invalid recent keys data:', recentData)
+      recentKeys.value = []
     } else {
-      console.warn('No statistics data received')
+      recentKeys.value = recentData
+    }
+    
+    if (!highScoreData || !Array.isArray(highScoreData)) {
+      debug.warn('Invalid high score keys data:', highScoreData)
+      highScoreKeys.value = []
+    } else {
+      highScoreKeys.value = highScoreData
+    }
+    
+    if (statsData && typeof statsData === 'object') {
+      debug.log('Processing stats data:', statsData)
+      initCharts(statsData)
+      updateSummaryStats(statsData)
+    } else {
+      debug.warn('Invalid statistics data:', statsData)
+      message.warning('没有获取到统计数据')
     }
   } catch (error) {
-    console.error('Failed to fetch data:', error)
+    debug.error('Failed to fetch data:', error)
     message.error('获取数据失败，请检查网络连接')
   } finally {
     loading.value = false
@@ -234,11 +258,31 @@ const handleResize = () => {
 const initCharts = (statsData: any) => {
   try {
     // 数据验证
-    if (!statsData?.score_distribution?.bins) {
+    if (!statsData || typeof statsData !== 'object') {
       console.warn('Invalid score distribution data')
+      message.warning('当前时间范围内没有数据')
       return
     }
-    
+
+    // 检查是否有实际数据
+    if (!statsData.score_distribution || statsData.score_distribution.total_count === 0) {
+      message.warning('所选时间范围内没有数据')
+      return
+    }
+
+    debug.log('Initializing charts with data:', {
+      distribution: statsData.score_distribution,
+      correlation: statsData.correlation_matrix,
+      trends: statsData.trends
+    })
+
+    // 验证必要的数据结构
+    if (!statsData.score_distribution.bins || !statsData.score_distribution.histogram) {
+      debug.warn('Missing required score distribution data')
+      message.warning('统计数据格式不正确')
+      return
+    }
+
     // 得分分布图
     const scoreChart = echarts.init(scoreDistChart.value)
     const scoreStats = statsData.score_distribution
@@ -736,9 +780,9 @@ const initCharts = (statsData: any) => {
     // 添加resize监听器
     window.addEventListener('resize', handleResize)
 
-    // 在关键添加数据检查和日志
-    console.log('Summary Stats:', statsData.summary_stats)
-    console.log('Trends Data:', statsData.trends)
+    // 在关键点添加数据检查和日志
+    debug.log('Summary Stats:', statsData.summary_stats)
+    debug.log('Trends Data:', statsData.trends)
     
     // 数据验证
     if (!statsData.trends?.avg_scores?.length) {
@@ -751,6 +795,7 @@ const initCharts = (statsData: any) => {
 }
 
 const updateSummaryStats = (statsData: any) => {
+  debug.log('Updating summary stats:', statsData.summary_stats)
   const stats = statsData.summary_stats.score
   summaryStats.value = [
     {
@@ -781,7 +826,7 @@ const updateSummaryStats = (statsData: any) => {
 }
 
 const generateTrendData = (statsData: any) => {
-  // 里需后端提供时间序列数据
+  debug.log('Generating trend data:', statsData.trends)
   return {
     avgScores: statsData.trends?.avg_scores || [],
     maxScores: statsData.trends?.max_scores || [],

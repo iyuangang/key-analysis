@@ -8,6 +8,7 @@
       :data="data"
       :bordered="false"
       :single-line="false"
+      :empty-text="data?.length ? '暂无数据' : '加载中...'"
     />
   </n-card>
 </template>
