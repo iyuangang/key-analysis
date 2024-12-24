@@ -88,9 +88,23 @@ npm run dev
 - POST `/auth/register` - Register new user
 
 ### Key Analysis
+All endpoints require authentication (Bearer token)
 - GET `/keys/recent` - Get recently generated keys
 - GET `/keys/high-score` - Get high scoring keys
 - GET `/statistics` - Get statistical analysis
+
+### Response Format
+```json
+{
+  "access_token": "string",  // JWT token
+  "token_type": "bearer"     // Always "bearer"
+}
+```
+
+### Error Responses
+- 401 Unauthorized - Invalid or missing token
+- 400 Bad Request - Invalid request parameters
+- 500 Internal Server Error - Server-side error
 
 ## Development
 

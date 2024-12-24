@@ -82,6 +82,7 @@ async def get_recent_keys(
 
 @app.get("/keys/high-score")
 async def get_high_score_keys(
+    current_user: UserSchema = Depends(get_current_active_user),
     start: Optional[int] = None,
     end: Optional[int] = None,
     db: Session = Depends(get_db),
@@ -92,6 +93,7 @@ async def get_high_score_keys(
 
 @app.get("/statistics")
 async def get_statistics(
+    current_user: UserSchema = Depends(get_current_active_user),
     start: Optional[int] = None,
     end: Optional[int] = None,
     db: Session = Depends(get_db),
