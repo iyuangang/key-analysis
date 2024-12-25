@@ -28,18 +28,28 @@ class KeyAnalyzer:
 
         debug.log(f"Recent keys cache miss")
         debug.log(f"Getting recent keys for time range: {start_time} to {end_time}")
+
         # 如果没有指定时间范围，默认使用最近24小时
         if start_time is None or end_time is None:
-            end = datetime.now(self.utc)
-            start = end - timedelta(days=1)
-        else:
-            start = datetime.fromtimestamp(start_time / 1000, self.utc)
-            end = datetime.fromtimestamp(end_time / 1000, self.utc)
+            # 获取当前时间的 UTC 时间戳（毫秒）
+            current_timestamp = int(datetime.now(self.utc).timestamp() * 1000)
+            end_time = current_timestamp
+            start_time = current_timestamp - 24 * 60 * 60 * 1000  # 24小时的毫秒数
 
-        debug.log(f"Processed time range: {start} to {end}")
-        # 转换为 naive datetime 用于数据库查询
-        start = start.replace(tzinfo=None)
+        # 将毫秒时间戳转换为本地时间
+        local_tz = pytz.timezone("Asia/Shanghai")
+        end = datetime.fromtimestamp(end_time / 1000).astimezone(local_tz)
+        start = datetime.fromtimestamp(start_time / 1000).astimezone(local_tz)
+
+        # 转换为 UTC 时间
+        # end = end.astimezone(self.utc)
+        # start = start.astimezone(self.utc)
+
+        # 移除时区信息以匹配数据库中的 naive datetime
         end = end.replace(tzinfo=None)
+        start = start.replace(tzinfo=None)
+
+        debug.log(f"Final time range - start: {start}, end: {end}")
 
         result = await self.db.execute(
             select(KeyInfo)
@@ -69,11 +79,16 @@ class KeyAnalyzer:
 
         # 添加时间范围过滤
         if start_time is not None and end_time is not None:
-            start = datetime.fromtimestamp(start_time / 1000, self.utc)
-            end = datetime.fromtimestamp(end_time / 1000, self.utc)
-            # 转换为 naive datetime
-            start = start.replace(tzinfo=None)
+            # 将毫秒时间戳转换为本地时间
+            local_tz = pytz.timezone("Asia/Shanghai")
+            end = datetime.fromtimestamp(end_time / 1000).astimezone(local_tz)
+            start = datetime.fromtimestamp(start_time / 1000).astimezone(local_tz)
+
+            # 移除时区信息以匹配数据库中的 naive datetime
             end = end.replace(tzinfo=None)
+            start = start.replace(tzinfo=None)
+
+            debug.log(f"Using time range - start: {start}, end: {end}")
             query = query.where(KeyInfo.created_at.between(start, end))
 
         result = await self.db.execute(query.order_by(KeyInfo.score.desc()).limit(10))
@@ -94,40 +109,24 @@ class KeyAnalyzer:
 
         debug.log(f"Statistics cache miss")
         debug.log(f"Getting statistics for time range: {start_time} to {end_time}")
-        # 获取所有数据
-        all_data_query = select(KeyInfo)
-        result = await self.db.execute(all_data_query)
-        all_df = pd.DataFrame(
-            [
-                {
-                    "id": row.id,
-                    "created_at": row.created_at,
-                    "fingerprint": row.fingerprint,
-                    "repeat_letter_score": row.repeat_letter_score,
-                    "increasing_letter_score": row.increasing_letter_score,
-                    "decreasing_letter_score": row.decreasing_letter_score,
-                    "magic_letter_score": row.magic_letter_score,
-                    "score": row.score,
-                    "unique_letters_count": row.unique_letters_count,
-                }
-                for row in result.scalars().all()
-            ]
-        )
-        debug.log(f"Total records: {len(all_df)}")
 
         # 确定时间范围
         if start_time is None or end_time is None:
-            end = datetime.now(self.utc)
-            start = end - timedelta(days=1)
-        else:
-            start = datetime.fromtimestamp(start_time / 1000, self.utc)
-            end = datetime.fromtimestamp(end_time / 1000, self.utc)
+            # 获取当前时间的 UTC 时间戳（毫秒）
+            current_timestamp = int(datetime.now(self.utc).timestamp() * 1000)
+            end_time = current_timestamp
+            start_time = current_timestamp - 24 * 60 * 60 * 1000  # 24小时的毫秒数
 
-        # 转换为 naive datetime
-        start = start.replace(tzinfo=None)
+        # 将毫秒时间戳转换为本地时间
+        local_tz = pytz.timezone("Asia/Shanghai")
+        end = datetime.fromtimestamp(end_time / 1000).astimezone(local_tz)
+        start = datetime.fromtimestamp(start_time / 1000).astimezone(local_tz)
+
+        # 移除时区信息以匹配数据库中的 naive datetime
         end = end.replace(tzinfo=None)
+        start = start.replace(tzinfo=None)
 
-        debug.log(f"Processed time range: {start} to {end}")
+        debug.log(f"Final time range - start: {start}, end: {end}")
 
         # 获取当前时间段的数据
         current_query = select(KeyInfo).where(KeyInfo.created_at.between(start, end))
@@ -136,7 +135,7 @@ class KeyAnalyzer:
             [
                 {
                     "id": row.id,
-                    "created_at": row.created_at,
+                    "created_at": row.created_at,  # 数据库返回的是 naive 时间
                     "fingerprint": row.fingerprint,
                     "repeat_letter_score": row.repeat_letter_score,
                     "increasing_letter_score": row.increasing_letter_score,
@@ -151,7 +150,7 @@ class KeyAnalyzer:
         debug.log(f"Current period records: {len(current_df)}")
 
         # 使用正确的数据集进行统计
-        df = all_df if start_time is None or end_time is None else current_df
+        df = current_df if start_time is None or end_time is None else current_df
         if df.empty:
             debug.log("Warning: No data available for the selected period")
             # 返回空的统计数据结构
@@ -217,7 +216,7 @@ class KeyAnalyzer:
                 return 0.0
 
         # 使用正确的数据集计算统计数据
-        stats_df = all_df if start_time is None or end_time is None else current_df
+        stats_df = current_df if start_time is None or end_time is None else current_df
         current_stats = {
             "mean": safe_calc(stats_df["score"], lambda x: x.mean()),
             "max": safe_calc(stats_df["score"], lambda x: x.max()),
@@ -254,11 +253,13 @@ class KeyAnalyzer:
             )
         else:
             # 如果是全部数据使用同样的数据作为对比
-            previous_df = all_df
+            previous_df = current_df
 
-        # 对数据使用前一个时间段或全部历史数据
+        # 对数据使用前一时间段或全部历史数据
         compare_df = (
-            previous_df if start_time is not None and end_time is not None else all_df
+            previous_df
+            if start_time is not None and end_time is not None
+            else current_df
         )
         previous_stats = {
             "mean": safe_calc(compare_df["score"], lambda x: x.mean()),
@@ -278,16 +279,17 @@ class KeyAnalyzer:
                 # 处理无穷大和 NaN 值
                 if pd.isna(trend) or np.isinf(trend):
                     return 0.0
-                return float(trend)
+                # 限制趋势值的范围
+                return max(min(float(trend), 10.0), -10.0)
             except:
                 return 0.0
 
         summary_stats = {
             "score": {
-                "mean": round(current_stats["mean"], 1),
-                "max": round(current_stats["max"], 1),
-                "count": current_stats["count"],
-                "qualified_rate": current_stats["qualified_rate"],
+                "mean": round(float(current_stats["mean"]), 1),
+                "max": round(float(current_stats["max"]), 1),
+                "count": int(current_stats["count"]),
+                "qualified_rate": float(current_stats["qualified_rate"]),
                 "mean_trend": calculate_trend(
                     current_stats["mean"], previous_stats["mean"]
                 ),
@@ -303,53 +305,32 @@ class KeyAnalyzer:
             }
         }
 
+        # 确保数据时区一致
+        df["created_at"] = pd.to_datetime(df["created_at"])
+        if df["created_at"].dt.tz is None:
+            local_tz = pytz.timezone("Asia/Shanghai")
+            df["created_at"] = df["created_at"].apply(lambda x: local_tz.localize(x))
+
         # 生成时间序列数据
         # 使用传入的时间范围，并调整到整点
         end_time = end.replace(minute=0, second=0, microsecond=0)
         start_time = start.replace(minute=0, second=0, microsecond=0)
 
-        # 创建时间索引
-        # 根据时间范围长度调整采样频率
+        # 确定时间频率
         time_delta = end_time - start_time
-        if time_delta.days > 7:
-            freq = "D"  # 过7天使用天为单位
-        elif time_delta.days > 2:
-            freq = "6h"  # 2-7天使用6小时为单位
+        if time_delta.days > 30:
+            freq = "D"  # 按天统计
+        elif time_delta.days > 7:
+            freq = "6h"  # 按6小时统计
         else:
-            freq = "h"  # 2天内使用小时为单位
+            freq = "h"  # 按小时统计
 
-        time_index = pd.date_range(
-            start=start_time, end=end_time, freq=freq, tz=self.utc
-        )
-
-        # 确保数据时区一致
-        df["created_at"] = pd.to_datetime(df["created_at"])
-        if df["created_at"].dt.tz is None:
-            df["created_at"] = df["created_at"].dt.tz_localize(self.utc)
-        else:
-            df["created_at"] = df["created_at"].dt.tz_convert(self.utc)
-
-        # 重采样数据
+        # 生成时间序列数据
         hourly_stats = (
-            df.set_index("created_at")
-            .resample(freq)
+            df.groupby(pd.Grouper(key="created_at", freq=freq))
             .agg({"score": ["mean", "max", "count"]})
             .fillna(0)
-        )
-
-        # 确保有完整的数据
-        hourly_stats = hourly_stats.reindex(time_index, fill_value=0)
-
-        # 仅在调试模式下输出辅助信息
-        debug.log("\nTime Range:")
-        debug.log(f"Start: {start_time}")
-        debug.log(f"End: {end_time}")
-        debug.log(f"Time Delta: {time_delta}")
-        debug.log(f"Sample Frequency: {freq}")
-        debug.log("\nOriginal Data Sample:")
-        debug.log(df["created_at"].head())
-        debug.log("\nHourly Stats Sample:")
-        debug.log(hourly_stats.head())
+        )  # 填充缺失值
 
         # 格式化趋势数据
         time_format = "%Y-%m-%d %H:%M" if freq in ["h", "6h"] else "%Y-%m-%d"
@@ -357,24 +338,27 @@ class KeyAnalyzer:
             "time_format": "YYYY-MM-DD HH:mm" if freq in ["h", "6h"] else "YYYY-MM-DD",
             "avg_scores": [
                 {
-                    "time": idx.strftime(time_format),
+                    "time": idx.tz_localize(None).strftime(time_format),
                     "value": round(float(row[("score", "mean")]), 2),
                 }
                 for idx, row in hourly_stats.iterrows()
+                if not pd.isna(row[("score", "mean")])
             ],
             "max_scores": [
                 {
-                    "time": idx.strftime(time_format),
+                    "time": idx.tz_localize(None).strftime(time_format),
                     "value": round(float(row[("score", "max")]), 2),
                 }
                 for idx, row in hourly_stats.iterrows()
+                if not pd.isna(row[("score", "max")])
             ],
             "counts": [
                 {
-                    "time": idx.strftime(time_format),
+                    "time": idx.tz_localize(None).strftime(time_format),
                     "value": int(row[("score", "count")]),
                 }
                 for idx, row in hourly_stats.iterrows()
+                if not pd.isna(row[("score", "count")])
             ],
         }
 
@@ -392,15 +376,14 @@ class KeyAnalyzer:
         return result
 
     def _format_key_info(self, key: KeyInfo) -> Dict:
+        # 数据库返回的是 naive 时间，需要先添加本地时区信息
+        created_at = key.created_at if key.created_at else datetime.now()
+        if created_at.tzinfo is None:
+            local_tz = pytz.timezone("Asia/Shanghai")
+            created_at = local_tz.localize(created_at)
         return {
-            "created_at": (
-                key.created_at.strftime("%Y-%m-%d %H:%M")
-                if key.created_at
-                else datetime.now().strftime("%Y-%m-%d %H:%M")
-            ),
-            "fingerprint": (
-                key.fingerprint.upper()[24:40] if key.fingerprint else "N/A"
-            ),
+            "created_at": created_at.strftime("%Y-%m-%d %H:%M"),
+            "fingerprint": key.fingerprint.upper()[24:40] if key.fingerprint else "N/A",
             "score": key.score or 0,
             "unique_letters_count": key.unique_letters_count or 0,
         }

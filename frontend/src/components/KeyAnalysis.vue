@@ -94,7 +94,15 @@ import {
 import { getRecentKeys, getHighScoreKeys, getStatistics } from '../services/api'
 import DataTable from './DataTable.vue'
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
 import { debug } from '../utils/debug'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
+
+// 设置默认时区
+const TIMEZONE = 'Asia/Shanghai'
 
 const message = useMessage()
 const scoreDistChart = ref()
@@ -135,21 +143,54 @@ const customDateRange = ref<[number, number] | null>(null)
 const loading = ref(false)
 
 const actualDateRange = computed(() => {
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const now = dayjs().tz(TIMEZONE)
+  const today = now.startOf('day')
+  
+  debug.log('Calculating date range:', {
+    now: {
+      timestamp: now.valueOf(),
+      formatted: now.format('YYYY-MM-DD HH:mm:ss'),
+      timezone: TIMEZONE
+    },
+    today: {
+      timestamp: today.valueOf(),
+      formatted: today.format('YYYY-MM-DD HH:mm:ss'),
+      timezone: TIMEZONE
+    }
+  })
   
   switch (dateRange.value) {
     case 'today':
       return {
-        start: today.getTime(),
-        end: now.getTime()
+        start: today.valueOf(),
+        end: now.valueOf()
       }
     case 'custom':
       if (customDateRange.value) {
         const [start, end] = customDateRange.value
+        const startDate = dayjs(start).tz(TIMEZONE).startOf('day')
+        const endDate = dayjs(end).tz(TIMEZONE).endOf('day')
+        
+        debug.log('Custom date range:', {
+          input: {
+            start,
+            end
+          },
+          output: {
+            start: {
+              timestamp: startDate.valueOf(),
+              formatted: startDate.format('YYYY-MM-DD HH:mm:ss')
+            },
+            end: {
+              timestamp: endDate.valueOf(),
+              formatted: endDate.format('YYYY-MM-DD HH:mm:ss')
+            }
+          }
+        })
+        
         return {
-          start,
-          end: new Date(end).setHours(23, 59, 59, 999)
+          start: startDate.valueOf(),
+          end: endDate.valueOf()
         }
       }
       return null
@@ -157,14 +198,14 @@ const actualDateRange = computed(() => {
       return null
     default:
       return {
-        start: today.getTime(),
-        end: now.getTime()
+        start: today.valueOf(),
+        end: now.valueOf()
       }
   }
 })
 
 const disableFutureDates = (ts: number) => {
-  return ts > Date.now()
+  return ts > dayjs().tz(TIMEZONE).valueOf()
 }
 
 const refreshData = async () => {
