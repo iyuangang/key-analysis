@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordRequestForm
-from .database import get_db
+from .database import get_db, init_db
 from .config import current_config
 from .services.key_analyzer import KeyAnalyzer
 from .models import User
@@ -31,6 +31,14 @@ class RegisterUser(BaseModel):
 
 
 app = FastAPI()
+
+
+@app.on_event("startup")
+async def startup_event():
+    debug.log("Starting up application...")
+    await init_db()
+    debug.log("Application startup completed")
+
 
 # 配置CORS
 app.add_middleware(
