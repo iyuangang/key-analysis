@@ -20,9 +20,7 @@ class TimeRange:
     def from_timestamps(cls, start_ms: Optional[int], end_ms: Optional[int]) -> 'TimeRange':
         utc = pytz.UTC
         if start_ms is None or end_ms is None:
-            current_timestamp = int(datetime.now(utc).timestamp() * 1000)
-            end_ms = current_timestamp
-            start_ms = current_timestamp - 24 * 60 * 60 * 1000
+            return cls(None, None)
 
         local_tz = pytz.timezone("Asia/Shanghai")
         end = datetime.fromtimestamp(end_ms / 1000).astimezone(local_tz)
@@ -135,13 +133,11 @@ class KeyAnalyzer:
         debug.log(f"Recent keys cache miss")
         time_range = TimeRange.from_timestamps(start_time, end_time)
         
-        result = await self.db.execute(
-            select(KeyInfo)
-            .where(KeyInfo.created_at.between(time_range.start, time_range.end))
-            .order_by(KeyInfo.id.desc())
-            .limit(self.DEFAULT_LIMIT)
-        )
+        query = select(KeyInfo).order_by(KeyInfo.id.desc())
+        if time_range.start is not None and time_range.end is not None:
+            query = query.where(KeyInfo.created_at.between(time_range.start, time_range.end))
         
+        result = await self.db.execute(query.limit(self.DEFAULT_LIMIT))
         formatted_results = [self._format_key_info(key) for key in result.scalars().all()]
         redis_client.set(cache_key, formatted_results, ttl=self.CACHE_EXPIRY)
         return formatted_results
@@ -157,8 +153,8 @@ class KeyAnalyzer:
         debug.log("High score keys cache miss")
         query = select(KeyInfo).where(KeyInfo.score > self.HIGH_SCORE_THRESHOLD)
 
-        if start_time is not None and end_time is not None:
-            time_range = TimeRange.from_timestamps(start_time, end_time)
+        time_range = TimeRange.from_timestamps(start_time, end_time)
+        if time_range.start is not None and time_range.end is not None:
             query = query.where(KeyInfo.created_at.between(time_range.start, time_range.end))
 
         result = await self.db.execute(query.order_by(KeyInfo.score.desc()).limit(self.DEFAULT_LIMIT))
@@ -167,9 +163,11 @@ class KeyAnalyzer:
         return formatted_results
 
     async def _get_dataframe(self, time_range: TimeRange) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        current_query = select(KeyInfo).where(
-            KeyInfo.created_at.between(time_range.start, time_range.end)
-        )
+        current_query = select(KeyInfo)
+        if time_range.start is not None and time_range.end is not None:
+            current_query = current_query.where(
+                KeyInfo.created_at.between(time_range.start, time_range.end)
+            )
         result = await self.db.execute(current_query)
         
         current_df = pd.DataFrame([{
@@ -187,32 +185,49 @@ class KeyAnalyzer:
         if current_df.empty:
             return current_df, current_df
 
-        previous_start = time_range.start - (time_range.end - time_range.start)
-        previous_query = select(KeyInfo).where(
-            KeyInfo.created_at.between(previous_start, time_range.start)
-        )
-        result = await self.db.execute(previous_query)
-        previous_df = pd.DataFrame([{
-            "id": row.id,
-            "created_at": row.created_at,
-            "fingerprint": row.fingerprint,
-            "repeat_letter_score": row.repeat_letter_score,
-            "increasing_letter_score": row.increasing_letter_score,
-            "decreasing_letter_score": row.decreasing_letter_score,
-            "magic_letter_score": row.magic_letter_score,
-            "score": row.score,
-            "unique_letters_count": row.unique_letters_count,
-        } for row in result.scalars().all()])
+        if time_range.start is not None and time_range.end is not None:
+            previous_start = time_range.start - (time_range.end - time_range.start)
+            previous_query = select(KeyInfo).where(
+                KeyInfo.created_at.between(previous_start, time_range.start)
+            )
+            result = await self.db.execute(previous_query)
+            previous_df = pd.DataFrame([{
+                "id": row.id,
+                "created_at": row.created_at,
+                "fingerprint": row.fingerprint,
+                "repeat_letter_score": row.repeat_letter_score,
+                "increasing_letter_score": row.increasing_letter_score,
+                "decreasing_letter_score": row.decreasing_letter_score,
+                "magic_letter_score": row.magic_letter_score,
+                "score": row.score,
+                "unique_letters_count": row.unique_letters_count,
+            } for row in result.scalars().all()])
+        else:
+            previous_df = current_df
 
         return current_df, previous_df
 
     def _calculate_trends(self, df: pd.DataFrame, time_range: TimeRange) -> Dict[str, Any]:
         local_tz = pytz.timezone("Asia/Shanghai")
-        end_time = time_range.end.replace(minute=0, second=0, microsecond=0)
-        start_time = time_range.start.replace(minute=0, second=0, microsecond=0)
-        
-        end_time = local_tz.localize(end_time)
-        start_time = local_tz.localize(start_time)
+
+        if time_range.start is None or time_range.end is None:
+            if df.empty:
+                return {
+                    "time_format": "YYYY-MM-DD HH:mm",
+                    "avg_scores": [],
+                    "max_scores": [],
+                    "counts": [],
+                }
+            
+            df["created_at"] = pd.to_datetime(df["created_at"])
+            start_time = df["created_at"].min()
+            end_time = df["created_at"].max()
+        else:
+            end_time = time_range.end.replace(minute=0, second=0, microsecond=0)
+            start_time = time_range.start.replace(minute=0, second=0, microsecond=0)
+            
+            end_time = local_tz.localize(end_time)
+            start_time = local_tz.localize(start_time)
         
         time_delta = end_time - start_time
 
@@ -257,7 +272,7 @@ class KeyAnalyzer:
                 }
                 for idx, row in hourly_stats.iterrows()
                 if not pd.isna(row[("score", "count")])
-            ],
+            ]
         }
 
     async def get_statistics(
