@@ -29,7 +29,7 @@ export const auth = {
     formData.append('username', credentials.username)
     formData.append('password', credentials.password)
 
-    const response = await api.post('/token', formData)
+    const response = await api.post('/auth/token', formData)
     debug.log('Login response:', response)
 
     if (!response || !response.access_token) {

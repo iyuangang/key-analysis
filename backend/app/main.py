@@ -1,11 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database import init_db
+from .core.db import init_db
 from .config import current_config
 from .utils.debug import debug
 from .routers import auth, users, keys, statistics
 
-app = FastAPI()
+app = FastAPI(
+    title="Key Analysis API",
+    description="A FastAPI application for key analysis",
+    version="1.0.0",
+)
 
 
 @app.on_event("startup")
@@ -25,7 +29,7 @@ app.add_middleware(
 )
 
 # 注册路由
-app.include_router(auth.router)
-app.include_router(users.router)
-app.include_router(keys.router)
-app.include_router(statistics.router)
+app.include_router(auth.router, prefix="/api", tags=["auth"])
+app.include_router(users.router, prefix="/api", tags=["users"])
+app.include_router(keys.router, prefix="/api", tags=["keys"])
+app.include_router(statistics.router, prefix="/api", tags=["statistics"])
