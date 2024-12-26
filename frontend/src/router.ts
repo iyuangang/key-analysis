@@ -9,13 +9,19 @@ const routes: RouteRecordRaw[] = [
     path: '/login',
     name: 'login',
     component: () => import('./views/Login.vue'),
-    meta: { requiresAuth: false }
+    meta: {
+      requiresAuth: false,
+      title: '登录'
+    }
   },
   {
     path: '/register',
     name: 'register',
     component: () => import('./views/Register.vue'),
-    meta: { requiresAuth: false }
+    meta: {
+      requiresAuth: false,
+      title: '注册'
+    }
   },
   {
     path: '/',
@@ -30,19 +36,46 @@ const routes: RouteRecordRaw[] = [
         path: 'dashboard',
         name: 'dashboard',
         component: () => import('./views/Dashboard.vue'),
-        meta: { requiresAuth: true }
+        meta: {
+          requiresAuth: true,
+          title: '仪表盘'
+        }
+      },
+      {
+        path: 'analysis',
+        name: 'analysis',
+        component: () => import('./views/Analysis.vue'),
+        meta: {
+          requiresAuth: true,
+          title: '密钥分析'
+        }
+      },
+      {
+        path: 'statistics',
+        name: 'statistics',
+        component: () => import('./views/Statistics.vue'),
+        meta: {
+          requiresAuth: true,
+          title: '统计报告'
+        }
       },
       {
         path: 'about',
         name: 'about',
         component: () => import('./views/About.vue'),
-        meta: { requiresAuth: false }
+        meta: {
+          requiresAuth: false,
+          title: '关于系统'
+        }
       },
       {
         path: 'user',
         name: 'user',
         component: () => import('./views/User.vue'),
-        meta: { requiresAuth: true }
+        meta: {
+          requiresAuth: true,
+          title: '个人中心'
+        }
       }
     ]
   }

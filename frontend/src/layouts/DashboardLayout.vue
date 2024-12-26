@@ -1,23 +1,9 @@
 <template>
   <div class="dashboard-layout">
     <n-layout has-sider>
-      <n-layout-sider
-        v-if="!isMobile"
-        bordered
-        collapse-mode="width"
-        :collapsed-width="64"
-        :width="240"
-        :collapsed="collapsed"
-        show-trigger
-        @collapse="collapsed = true"
-        @expand="collapsed = false"
-      >
-        <n-menu
-          :collapsed="collapsed"
-          :collapsed-width="64"
-          :collapsed-icon-size="22"
-          :options="menuOptions"
-        />
+      <n-layout-sider v-if="!isMobile" bordered collapse-mode="width" :collapsed-width="64" :width="240"
+        :collapsed="collapsed" show-trigger @collapse="collapsed = true" @expand="collapsed = false">
+        <n-menu :collapsed="collapsed" :collapsed-width="64" :collapsed-icon-size="22" :options="menuOptions" />
       </n-layout-sider>
       <n-layout>
         <n-layout-header bordered class="header">
@@ -51,11 +37,7 @@
     <!-- 移动端抽屉菜单 -->
     <n-drawer v-model:show="showDrawer" :width="280" placement="left">
       <n-drawer-content title="菜单" closable>
-        <n-menu
-          :options="menuOptions"
-          :indent="18"
-          @update:value="handleMenuSelect"
-        />
+        <n-menu :options="menuOptions" :indent="18" @update:value="handleMenuSelect" />
       </n-drawer-content>
     </n-drawer>
   </div>
@@ -64,15 +46,15 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeMount, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { 
+import {
   UserOutlined,
   DashboardOutlined,
   MenuOutlined
 } from '@vicons/antd'
-import { 
+import {
   AppstoreOutlined as ChartOutlined
 } from '@vicons/antd'
-import { 
+import {
   NLayout,
   NLayoutSider,
   NLayoutHeader,
@@ -275,4 +257,4 @@ onMounted(async () => {
 .fade-leave-to {
   opacity: 0;
 }
-</style> 
+</style>
