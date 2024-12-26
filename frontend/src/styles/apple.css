@@ -1,12 +1,27 @@
 :root {
-  /* Colors */
-  --apple-bg-primary: #f5f5f7;
-  --apple-bg-secondary: #ffffff;
-  --apple-text-primary: #1d1d1f;
-  --apple-text-secondary: #86868b;
+  /* Light Theme Colors */
+  --apple-bg-primary-light: #f5f5f7;
+  --apple-bg-secondary-light: #ffffff;
+  --apple-text-primary-light: #1d1d1f;
+  --apple-text-secondary-light: #86868b;
+  --apple-border-light: #d2d2d7;
+  --apple-card-bg-light: rgba(255, 255, 255, 0.8);
+  --apple-hover-bg-light: rgba(0, 0, 0, 0.05);
+  --apple-sidebar-bg-light: rgba(255, 255, 255, 0.8);
+
+  /* Dark Theme Colors */
+  --apple-bg-primary-dark: #000000;
+  --apple-bg-secondary-dark: #1c1c1e;
+  --apple-text-primary-dark: #ffffff;
+  --apple-text-secondary-dark: #98989d;
+  --apple-border-dark: #38383a;
+  --apple-card-bg-dark: rgba(28, 28, 30, 0.8);
+  --apple-hover-bg-dark: rgba(255, 255, 255, 0.1);
+  --apple-sidebar-bg-dark: rgba(28, 28, 30, 0.8);
+
+  /* Common Colors */
   --apple-accent: #0066cc;
   --apple-accent-dark: #0055b3;
-  --apple-border: #d2d2d7;
   --apple-success: #28cd41;
   --apple-warning: #ff9f0a;
   --apple-error: #ff3b30;
@@ -37,19 +52,54 @@
   --apple-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
   --apple-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
   --apple-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+  --apple-shadow-dark-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+  --apple-shadow-dark-md: 0 4px 8px rgba(0, 0, 0, 0.3);
+  --apple-shadow-dark-lg: 0 8px 16px rgba(0, 0, 0, 0.4);
   --apple-blur-effect: saturate(180%) blur(20px);
-  --apple-gradient: linear-gradient(180deg, var(--apple-text-primary), var(--apple-text-secondary));
   --apple-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --apple-radius-sm: 4px;
   --apple-radius-md: 8px;
   --apple-radius-lg: 12px;
   --apple-radius-xl: 16px;
 
-  /* Card */
-  --apple-card-bg: rgba(255, 255, 255, 0.8);
-  --apple-card-border: 1px solid var(--apple-border);
-  --apple-card-radius: var(--apple-radius-lg);
-  --apple-card-shadow: var(--apple-shadow-md);
+  /* Dynamic Theme Variables */
+  --apple-bg-primary: var(--apple-bg-primary-light);
+  --apple-bg-secondary: var(--apple-bg-secondary-light);
+  --apple-text-primary: var(--apple-text-primary-light);
+  --apple-text-secondary: var(--apple-text-secondary-light);
+  --apple-border: var(--apple-border-light);
+  --apple-card-bg: var(--apple-card-bg-light);
+  --apple-hover-bg: var(--apple-hover-bg-light);
+  --apple-sidebar-bg: var(--apple-sidebar-bg-light);
+  --apple-shadow: var(--apple-shadow-md);
+}
+
+/* Dark Theme */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --apple-bg-primary: var(--apple-bg-primary-dark);
+    --apple-bg-secondary: var(--apple-bg-secondary-dark);
+    --apple-text-primary: var(--apple-text-primary-dark);
+    --apple-text-secondary: var(--apple-text-secondary-dark);
+    --apple-border: var(--apple-border-dark);
+    --apple-card-bg: var(--apple-card-bg-dark);
+    --apple-hover-bg: var(--apple-hover-bg-dark);
+    --apple-sidebar-bg: var(--apple-sidebar-bg-dark);
+    --apple-shadow: var(--apple-shadow-dark-md);
+  }
+}
+
+/* Manual Theme Classes */
+:root[data-theme='dark'] {
+  --apple-bg-primary: var(--apple-bg-primary-dark);
+  --apple-bg-secondary: var(--apple-bg-secondary-dark);
+  --apple-text-primary: var(--apple-text-primary-dark);
+  --apple-text-secondary: var(--apple-text-secondary-dark);
+  --apple-border: var(--apple-border-dark);
+  --apple-card-bg: var(--apple-card-bg-dark);
+  --apple-hover-bg: var(--apple-hover-bg-dark);
+  --apple-sidebar-bg: var(--apple-sidebar-bg-dark);
+  --apple-shadow: var(--apple-shadow-dark-md);
 }
 
 /* Base Styles */
@@ -62,6 +112,8 @@ body {
   background-color: var(--apple-bg-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--apple-transition),
+              color var(--apple-transition);
 }
 
 /* Typography */
@@ -100,9 +152,9 @@ a:hover {
 /* Cards */
 .apple-card {
   background-color: var(--apple-card-bg);
-  border-radius: var(--apple-card-radius);
-  border: var(--apple-card-border);
-  box-shadow: var(--apple-card-shadow);
+  border-radius: var(--apple-radius-lg);
+  border: 1px solid var(--apple-border);
+  box-shadow: var(--apple-shadow);
   backdrop-filter: var(--apple-blur-effect);
 }
 

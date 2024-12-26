@@ -5,6 +5,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { auth } from '../services/auth'
 import type { User } from '../types/user'
 import AppLogo from '../components/AppLogo.vue'
+import { useTheme } from '../composables/useTheme'
 
 const router = useRouter()
 const route = useRoute()
@@ -12,6 +13,7 @@ const collapsed = ref(false)
 const currentUser = ref<User | null>(null)
 const isMobile = ref(false)
 const showDrawer = ref(false)
+const { theme, systemDark, toggleTheme } = useTheme()
 
 const checkMobile = () => {
   isMobile.value = window.innerWidth <= 768
@@ -108,6 +110,13 @@ const handleUserAction = (key: string) => {
     router.push({ name: 'user' })
   }
 }
+
+const handleThemeToggle = () => {
+  console.log('Current theme:', theme.value)
+  console.log('System dark:', systemDark.value)
+  toggleTheme()
+  console.log('New theme:', theme.value)
+}
 </script>
 
 <template>
@@ -135,6 +144,14 @@ const handleUserAction = (key: string) => {
               <h2>{{ route.meta.title || '密钥分析系统' }}</h2>
             </div>
             <div class="header-right">
+              <NButton quaternary circle class="theme-button" @click="handleThemeToggle">
+                <template #icon>
+                  <NIcon>
+                    <i
+                      :class="theme === 'dark' || (theme === 'system' && systemDark) ? 'i-ion-sunny-outline' : 'i-ion-moon-outline'" />
+                  </NIcon>
+                </template>
+              </NButton>
               <NDropdown :options="userDropdownOptions" @select="handleUserAction" trigger="click">
                 <NSpace align="center" class="user-info">
                   <NAvatar round size="small">
@@ -177,9 +194,9 @@ const handleUserAction = (key: string) => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: var(--apple-card-bg);
+  background-color: var(--apple-sidebar-bg);
   backdrop-filter: var(--apple-blur-effect);
-  border-right: var(--apple-card-border);
+  border-right: 1px solid var(--apple-border);
 }
 
 .main-header {
@@ -187,7 +204,7 @@ const handleUserAction = (key: string) => {
   padding: 0;
   background-color: var(--apple-card-bg);
   backdrop-filter: var(--apple-blur-effect);
-  border-bottom: var(--apple-card-border);
+  border-bottom: 1px solid var(--apple-border);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -229,7 +246,7 @@ const handleUserAction = (key: string) => {
 }
 
 .user-info:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: var(--apple-hover-bg);
 }
 
 .username {
@@ -249,11 +266,25 @@ const handleUserAction = (key: string) => {
   --n-item-height: 44px;
   --n-font-size: var(--apple-font-sm);
   font-weight: 500;
+  background-color: transparent;
+}
+
+:deep(.n-menu-item) {
+  color: var(--apple-text-primary) !important;
+}
+
+:deep(.n-menu-item:hover),
+:deep(.n-menu-item--selected) {
+  background-color: var(--apple-hover-bg) !important;
 }
 
 :deep(.n-button) {
   font-weight: 500;
   letter-spacing: var(--apple-letter-spacing);
+}
+
+:deep(.n-button:not(.n-button--disabled):hover) {
+  background-color: var(--apple-hover-bg);
 }
 
 :deep(.n-drawer) {
@@ -267,7 +298,7 @@ const handleUserAction = (key: string) => {
 }
 
 :deep(.n-drawer-header) {
-  border-bottom: var(--apple-card-border);
+  border-bottom: 1px solid var(--apple-border);
 }
 
 :deep(.n-drawer-header__title) {
@@ -313,5 +344,74 @@ const handleUserAction = (key: string) => {
 /* 动画效果 */
 :deep(.n-button:not(.n-button--disabled):active) {
   transform: scale(0.96);
+}
+
+.theme-button {
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid var(--apple-border) !important;
+  background-color: var(--apple-bg-secondary) !important;
+  color: var(--apple-text-primary) !important;
+  transition: all 0.3s ease !important;
+}
+
+.theme-button:hover {
+  background-color: var(--apple-hover-bg) !important;
+  transform: scale(1.05);
+}
+
+.theme-button:active {
+  transform: scale(0.95);
+}
+
+.theme-icon {
+  font-size: 20px;
+  color: var(--apple-text-primary);
+  transition: all 0.3s ease;
+}
+
+.theme-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  padding: 6px 12px;
+  background-color: var(--apple-bg-secondary);
+  border: 1px solid var(--apple-border);
+  border-radius: var(--apple-radius-md);
+  font-size: var(--apple-font-xs);
+  color: var(--apple-text-primary);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  box-shadow: var(--apple-shadow-sm);
+  backdrop-filter: var(--apple-blur-effect);
+  z-index: 2;
+}
+
+.theme-switch:hover .theme-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(4px);
+}
+
+/* 主题切换动画 */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.theme-button:active .theme-icon {
+  animation: rotate 0.5s ease;
 }
 </style>
