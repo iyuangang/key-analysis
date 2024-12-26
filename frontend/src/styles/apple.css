@@ -1,0 +1,178 @@
+/* Apple Design System Variables */
+:root {
+  /* Colors */
+  --apple-bg-primary: #f5f5f7;
+  --apple-text-primary: #1d1d1f;
+  --apple-text-secondary: #86868b;
+  --apple-gradient: linear-gradient(135deg, #1a1a1a 0%, #434343 100%);
+  --apple-border-color: rgba(0, 0, 0, 0.1);
+  --apple-card-bg: rgba(255, 255, 255, 0.72);
+  
+  /* Spacing */
+  --apple-spacing-xs: 8px;
+  --apple-spacing-sm: 12px;
+  --apple-spacing-md: 16px;
+  --apple-spacing-lg: 24px;
+  --apple-spacing-xl: 32px;
+  
+  /* Typography */
+  --apple-font-xs: 12px;
+  --apple-font-sm: 13px;
+  --apple-font-base: 14px;
+  --apple-font-md: 15px;
+  --apple-font-lg: 17px;
+  --apple-font-xl: 20px;
+  --apple-font-2xl: 28px;
+  --apple-font-3xl: 32px;
+  
+  /* Effects */
+  --apple-blur-effect: saturate(180%) blur(20px);
+  --apple-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --apple-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  
+  /* Border Radius */
+  --apple-radius-sm: 8px;
+  --apple-radius-base: 12px;
+  --apple-radius-lg: 14px;
+  --apple-radius-full: 9999px;
+}
+
+/* Global Styles */
+body {
+  background-color: var(--apple-bg-primary);
+  color: var(--apple-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Card Styles */
+.apple-card {
+  background: var(--apple-card-bg);
+  backdrop-filter: var(--apple-blur-effect);
+  border-radius: var(--apple-radius-lg);
+  border: 1px solid var(--apple-border-color);
+  transition: var(--apple-transition);
+}
+
+.apple-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--apple-shadow);
+}
+
+/* Button Styles */
+.apple-button {
+  height: 50px;
+  font-size: var(--apple-font-lg);
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  border-radius: var(--apple-radius-base);
+  transition: var(--apple-transition);
+}
+
+.apple-button-primary {
+  background: var(--apple-gradient);
+  color: white;
+}
+
+.apple-button-secondary {
+  background: transparent;
+  color: var(--apple-text-primary);
+}
+
+/* Input Styles */
+.apple-input {
+  height: 44px;
+  font-size: var(--apple-font-md);
+  border-radius: var(--apple-radius-base);
+  border: 1px solid var(--apple-border-color);
+  transition: var(--apple-transition);
+}
+
+.apple-input:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.apple-input:focus {
+  border-color: var(--apple-text-primary);
+}
+
+/* Typography Styles */
+.apple-title {
+  font-size: var(--apple-font-3xl);
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  background: var(--apple-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.apple-subtitle {
+  font-size: var(--apple-font-md);
+  color: var(--apple-text-secondary);
+  letter-spacing: -0.2px;
+}
+
+/* Chart Container Styles */
+.apple-chart-container {
+  background: var(--apple-card-bg);
+  backdrop-filter: var(--apple-blur-effect);
+  border-radius: var(--apple-radius-lg);
+  border: 1px solid var(--apple-border-color);
+  padding: var(--apple-spacing-lg);
+  transition: var(--apple-transition);
+}
+
+.apple-chart-container:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--apple-shadow);
+}
+
+.apple-chart-title {
+  font-size: var(--apple-font-lg);
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  margin-bottom: var(--apple-spacing-md);
+  background: var(--apple-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Table Styles */
+.apple-table {
+  --n-th-color: rgba(0, 0, 0, 0.02);
+  --n-th-text-color: var(--apple-text-secondary);
+  --n-td-color: transparent;
+  --n-td-text-color: var(--apple-text-primary);
+  font-size: var(--apple-font-base);
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .apple-button {
+    height: 44px;
+    font-size: var(--apple-font-md);
+  }
+  
+  .apple-input {
+    height: 40px;
+    font-size: var(--apple-font-base);
+  }
+  
+  .apple-title {
+    font-size: var(--apple-font-2xl);
+  }
+  
+  .apple-subtitle {
+    font-size: var(--apple-font-base);
+  }
+  
+  .apple-chart-container {
+    padding: var(--apple-spacing-md);
+  }
+  
+  .apple-chart-title {
+    font-size: var(--apple-font-md);
+    margin-bottom: var(--apple-spacing-sm);
+  }
+} 

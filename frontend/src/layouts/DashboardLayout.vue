@@ -155,20 +155,21 @@ onMounted(async () => {
 <style scoped>
 .dashboard-layout {
   height: 100vh;
-  background-color: #f5f5f7;
+  background-color: var(--apple-bg-primary);
 }
 
 .header {
-  backdrop-filter: saturate(180%) blur(20px);
-  background-color: rgba(255, 255, 255, 0.72);
+  backdrop-filter: var(--apple-blur-effect);
+  background-color: var(--apple-card-bg);
   position: sticky;
   top: 0;
   z-index: 100;
-  transition: background-color 0.3s;
+  transition: var(--apple-transition);
+  border-bottom: 1px solid var(--apple-border-color);
 }
 
 .header-content {
-  padding: 0 24px;
+  padding: 0 var(--apple-spacing-lg);
   height: 48px;
   display: flex;
   align-items: center;
@@ -178,13 +179,13 @@ onMounted(async () => {
 .header-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--apple-spacing-md);
 }
 
 .header-title {
-  font-size: 17px;
+  font-size: var(--apple-font-lg);
   font-weight: 600;
-  background: linear-gradient(135deg, #1a1a1a 0%, #434343 100%);
+  background: var(--apple-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: -0.5px;
@@ -193,22 +194,23 @@ onMounted(async () => {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--apple-spacing-md);
 }
 
 .main-content {
-  padding: 24px;
+  padding: var(--apple-spacing-lg);
   min-height: calc(100vh - 48px);
 }
 
 :deep(.n-button) {
   font-weight: 500;
+  letter-spacing: -0.2px;
 }
 
 :deep(.n-layout-sider) {
-  background-color: rgba(255, 255, 255, 0.72);
-  backdrop-filter: saturate(180%) blur(20px);
-  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: var(--apple-card-bg);
+  backdrop-filter: var(--apple-blur-effect);
+  border-right: 1px solid var(--apple-border-color);
 }
 
 :deep(.n-menu-item) {
@@ -217,25 +219,41 @@ onMounted(async () => {
 }
 
 :deep(.n-drawer) {
-  background-color: rgba(255, 255, 255, 0.72);
-  backdrop-filter: saturate(180%) blur(20px);
+  background-color: var(--apple-card-bg);
+  backdrop-filter: var(--apple-blur-effect);
+}
+
+:deep(.n-drawer-content) {
+  background-color: var(--apple-card-bg);
+  backdrop-filter: var(--apple-blur-effect);
+}
+
+:deep(.n-drawer-header) {
+  border-bottom: 1px solid var(--apple-border-color);
+}
+
+:deep(.n-drawer-header__title) {
+  font-size: var(--apple-font-lg);
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--apple-text-primary);
 }
 
 @media (max-width: 768px) {
   .header-content {
-    padding: 0 16px;
+    padding: 0 var(--apple-spacing-md);
   }
 
   .main-content {
-    padding: 16px;
+    padding: var(--apple-spacing-md);
   }
 
   :deep(.n-drawer-content) {
-    padding: 16px;
+    padding: var(--apple-spacing-md);
   }
 
   :deep(.n-drawer-header) {
-    padding: 16px;
+    padding: var(--apple-spacing-md);
   }
 
   :deep(.n-drawer-body) {

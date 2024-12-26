@@ -129,30 +129,30 @@ const mobileColumns: DataTableColumns = [
 
 <style scoped>
 .data-table {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: saturate(180%) blur(20px);
-  border-radius: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--apple-card-bg);
+  backdrop-filter: var(--apple-blur-effect);
+  border-radius: var(--apple-radius-lg);
+  border: 1px solid var(--apple-border-color);
+  transition: var(--apple-transition);
 }
 
 .data-table:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--apple-shadow);
 }
 
 .table-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 0;
+  padding: var(--apple-spacing-xs) 0;
 }
 
 h3 {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--apple-font-lg);
   font-weight: 600;
-  background: linear-gradient(135deg, #1a1a1a 0%, #434343 100%);
+  background: var(--apple-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: -0.5px;
@@ -160,29 +160,29 @@ h3 {
 
 :deep(.custom-table) {
   --n-th-color: rgba(0, 0, 0, 0.02);
-  --n-th-text-color: #86868b;
+  --n-th-text-color: var(--apple-text-secondary);
   --n-td-color: transparent;
-  --n-td-text-color: #1d1d1f;
+  --n-td-text-color: var(--apple-text-primary);
 }
 
 :deep(.n-data-table-th) {
-  font-size: 13px;
+  font-size: var(--apple-font-sm);
   font-weight: 500;
   letter-spacing: -0.2px;
-  padding: 12px !important;
+  padding: var(--apple-spacing-sm) !important;
 }
 
 :deep(.n-data-table-td) {
-  font-size: 14px;
+  font-size: var(--apple-font-base);
   letter-spacing: -0.2px;
-  padding: 12px !important;
+  padding: var(--apple-spacing-sm) !important;
 }
 
 :deep(.n-button) {
   width: 32px;
   height: 32px;
-  border-radius: 16px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--apple-radius-full);
+  transition: var(--apple-transition);
 }
 
 :deep(.n-button:hover) {
@@ -195,10 +195,10 @@ h3 {
 
 :deep(.score-value) {
   font-weight: 500;
-  padding: 4px 8px;
-  border-radius: 6px;
+  padding: var(--apple-spacing-xs) var(--apple-spacing-sm);
+  border-radius: var(--apple-radius-sm);
   background-color: rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
+  transition: var(--apple-transition);
 }
 
 :deep(.score-value.high-score) {
@@ -208,17 +208,17 @@ h3 {
 
 @media (max-width: 768px) {
   h3 {
-    font-size: 15px;
+    font-size: var(--apple-font-md);
   }
 
   :deep(.n-data-table-th) {
-    font-size: 12px;
-    padding: 8px !important;
+    font-size: var(--apple-font-xs);
+    padding: var(--apple-spacing-xs) !important;
   }
 
   :deep(.n-data-table-td) {
-    font-size: 13px;
-    padding: 8px !important;
+    font-size: var(--apple-font-sm);
+    padding: var(--apple-spacing-xs) !important;
   }
 
   :deep(.n-button) {
