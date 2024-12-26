@@ -72,6 +72,12 @@
   --apple-hover-bg: var(--apple-hover-bg-light);
   --apple-sidebar-bg: var(--apple-sidebar-bg-light);
   --apple-shadow: var(--apple-shadow-md);
+
+  /* 主题切换过渡 */
+  transition: background-color 0.3s ease,
+              color 0.3s ease,
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
 }
 
 /* Dark Theme */

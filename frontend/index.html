@@ -3,43 +3,30 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>密钥分析系统</title>
   <script>
     (function () {
-      const theme = localStorage.getItem('apple-theme-preference') || 'system';
+      const theme = localStorage.getItem('theme') || 'system';
       const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      console.log('Initial theme:', theme);
-      console.log('System dark mode:', systemDark);
-
-      const isDark = theme === 'dark' || (theme === 'system' && systemDark);
-      console.log('Setting theme:', isDark ? 'dark' : 'light');
-
-      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-
+      const mode = theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
       const root = document.documentElement;
-      if (isDark) {
-        root.style.setProperty('--apple-bg-primary', 'var(--apple-bg-primary-dark)');
-        root.style.setProperty('--apple-bg-secondary', 'var(--apple-bg-secondary-dark)');
-        root.style.setProperty('--apple-text-primary', 'var(--apple-text-primary-dark)');
-        root.style.setProperty('--apple-text-secondary', 'var(--apple-text-secondary-dark)');
-        root.style.setProperty('--apple-border', 'var(--apple-border-dark)');
-        root.style.setProperty('--apple-card-bg', 'var(--apple-card-bg-dark)');
-        root.style.setProperty('--apple-hover-bg', 'var(--apple-hover-bg-dark)');
-        root.style.setProperty('--apple-sidebar-bg', 'var(--apple-sidebar-bg-dark)');
-        root.style.setProperty('--apple-shadow', 'var(--apple-shadow-dark-md)');
-      } else {
-        root.style.setProperty('--apple-bg-primary', 'var(--apple-bg-primary-light)');
-        root.style.setProperty('--apple-bg-secondary', 'var(--apple-bg-secondary-light)');
-        root.style.setProperty('--apple-text-primary', 'var(--apple-text-primary-light)');
-        root.style.setProperty('--apple-text-secondary', 'var(--apple-text-secondary-light)');
-        root.style.setProperty('--apple-border', 'var(--apple-border-light)');
-        root.style.setProperty('--apple-card-bg', 'var(--apple-card-bg-light)');
-        root.style.setProperty('--apple-hover-bg', 'var(--apple-hover-bg-light)');
-        root.style.setProperty('--apple-sidebar-bg', 'var(--apple-sidebar-bg-light)');
-        root.style.setProperty('--apple-shadow', 'var(--apple-shadow-md)');
-      }
+
+      // 设置主题属性
+      root.setAttribute('data-theme', mode);
+
+      // 设置 CSS 变量
+      const suffix = mode === 'dark' ? '-dark' : '-light';
+      root.style.setProperty('--apple-bg-primary', `var(--apple-bg-primary${suffix})`);
+      root.style.setProperty('--apple-bg-secondary', `var(--apple-bg-secondary${suffix})`);
+      root.style.setProperty('--apple-text-primary', `var(--apple-text-primary${suffix})`);
+      root.style.setProperty('--apple-text-secondary', `var(--apple-text-secondary${suffix})`);
+      root.style.setProperty('--apple-border', `var(--apple-border${suffix})`);
+      root.style.setProperty('--apple-card-bg', `var(--apple-card-bg${suffix})`);
+      root.style.setProperty('--apple-hover-bg', `var(--apple-hover-bg${suffix})`);
+      root.style.setProperty('--apple-sidebar-bg', `var(--apple-sidebar-bg${suffix})`);
+      root.style.setProperty('--apple-shadow', `var(--apple-shadow${mode === 'dark' ? '-dark' : ''}-md)`);
     })();
   </script>
 </head>

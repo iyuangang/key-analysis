@@ -1,82 +1,46 @@
 <template>
-  <div class="register-container">
-    <n-card title="注册" class="register-card">
-      <n-form
-        ref="formRef"
-        :model="formValue"
-        :rules="rules"
-      >
-        <n-form-item path="username" label="用户名">
-          <n-input 
-            v-model:value="formValue.username" 
-            placeholder="请输入用户名"
-            :disabled="loading"
-          />
-        </n-form-item>
-        <n-form-item path="email" label="邮箱">
-          <n-input 
-            v-model:value="formValue.email" 
-            placeholder="请输入邮箱"
-            :disabled="loading"
-          />
-        </n-form-item>
-        <n-form-item path="password" label="密码">
-          <n-input
-            v-model:value="formValue.password"
-            type="password"
-            placeholder="请输入密码"
-            :disabled="loading"
-          />
-        </n-form-item>
-        <n-form-item path="confirmPassword" label="确认密码">
-          <n-input
-            v-model:value="formValue.confirmPassword"
-            type="password"
-            placeholder="请再次输入密码"
-            :disabled="loading"
-          />
-        </n-form-item>
-        <div class="action-buttons">
-          <n-button
-            type="primary"
-            block
-            :loading="loading"
-            @click="handleSubmit"
-          >
-            注册
-          </n-button>
-          <n-button
-            block
-            @click="router.push('/login')"
-            :disabled="loading"
-          >
+  <AuthLayout>
+    <NCard class="register-card" title="注册账号" :bordered="false">
+      <NForm ref="formRef" :model="formValue" @submit.prevent="handleSubmit">
+        <NFormItem label="用户名" path="username">
+          <NInput v-model:value="formValue.username" placeholder="请输入用户名" />
+        </NFormItem>
+        <NFormItem label="邮箱" path="email">
+          <NInput v-model:value="formValue.email" placeholder="请输入邮箱" />
+        </NFormItem>
+        <NFormItem label="密码" path="password">
+          <NInput v-model:value="formValue.password" type="password" placeholder="请输入密码" show-password-on="click" />
+        </NFormItem>
+        <NFormItem label="确认密码" path="confirmPassword">
+          <NInput v-model:value="formValue.confirmPassword" type="password" placeholder="请再次输入密码"
+            show-password-on="click" />
+        </NFormItem>
+        <div class="action-row">
+          <NButton type="primary" attr-type="submit" :loading="loading" block>
+            {{ loading ? '注册中...' : '注册' }}
+          </NButton>
+          <NButton quaternary block @click="router.push('/login')">
             返回登录
-          </n-button>
+          </NButton>
         </div>
-      </n-form>
-    </n-card>
-  </div>
+      </NForm>
+    </NCard>
+  </AuthLayout>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage } from 'naive-ui'
-import { 
-  NCard, 
-  NForm, 
-  NFormItem, 
-  NInput, 
-  NButton 
-} from 'naive-ui'
-import { auth } from '../services/auth'
-import { debug } from '../utils/debug'
+import { NCard, NForm, NFormItem, NInput, NButton, useMessage } from 'naive-ui'
+import { useAuth } from '../composables/useAuth'
+import AuthLayout from '../layouts/AuthLayout.vue'
 
 const router = useRouter()
 const message = useMessage()
-const loading = ref(false)
-const formRef = ref<typeof NForm | null>(null)
+const auth = useAuth()
 
+const formRef = ref()
+const loading = ref(false)
 const formValue = ref({
   username: '',
   email: '',
@@ -84,61 +48,23 @@ const formValue = ref({
   confirmPassword: ''
 })
 
-const rules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: ['blur', 'input'] },
-    { min: 3, message: '用户名至少3个字符', trigger: ['blur', 'input'] }
-  ],
-  email: [
-    { required: true, message: '请输入邮箱', trigger: ['blur', 'input'] },
-    { type: 'email', message: '请输入有效的邮箱地址', trigger: ['blur', 'input'] }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: ['blur', 'input'] },
-    { min: 6, message: '密码至少6个字符', trigger: ['blur', 'input'] }
-  ],
-  confirmPassword: [
-    { required: true, message: '请确认密码', trigger: ['blur', 'input'] },
-    {
-      validator: (rule: any, value: string) => value === formValue.value.password,
-      message: '两次输入的密码不一致',
-      trigger: ['blur', 'input']
-    }
-  ]
-}
-
 const handleSubmit = async () => {
+  if (formValue.value.password !== formValue.value.confirmPassword) {
+    message.error('两次输入的密码不一致')
+    return
+  }
+
   try {
     loading.value = true
-    await formRef.value?.validate()
-    
-    debug.log('Register attempt:', { 
-      username: formValue.value.username,
-      email: formValue.value.email 
-    })
-    
-    await auth.register({
-      username: formValue.value.username,
-      email: formValue.value.email,
-      password: formValue.value.password
-    })
-    
-    message.success('注册成功，请登录')
+    await auth.register(formValue.value)
+    message.success('注册成功')
     router.push('/login')
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof Error) {
-      const errorMsg = error.message
-      if (errorMsg.includes('Username already registered')) {
-        message.error('用户名已被注册')
-      } else if (errorMsg.includes('Email already registered')) {
-        message.error('邮箱已被注册')
-      } else {
-        message.error(errorMsg)
-      }
+      message.error('注册失败: ' + error.message)
     } else {
-      message.error('注册失败，请重试')
+      message.error('注册失败，请稍后重试')
     }
-    debug.error('Register failed:', error)
   } finally {
     loading.value = false
   }
@@ -146,37 +72,45 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-.register-container {
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f0f2f5;
-}
-
 .register-card {
   width: 100%;
-  max-width: 360px;
+  max-width: 400px;
+  margin: 0 20px;
+  background-color: var(--apple-bg-secondary) !important;
+  border-radius: var(--apple-radius-lg) !important;
+  box-shadow: var(--apple-shadow-lg) !important;
+  backdrop-filter: var(--apple-blur-effect);
 }
 
 .register-card :deep(.n-card-header) {
+  font-size: var(--apple-font-xl);
+  font-weight: 600;
+  color: var(--apple-text-primary);
   text-align: center;
-  font-size: 24px;
-  padding: 20px 0;
+  padding-bottom: 24px;
 }
 
-.action-buttons {
-  margin-top: 24px;
+.register-card :deep(.n-card__content) {
+  padding: 0 24px 24px;
+}
+
+.action-row {
+  margin-top: 32px;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-:deep(.n-form-item) {
-  margin-bottom: 24px;
+/* 适配暗色主题的输入框样式 */
+:deep(.n-input) {
+  background-color: var(--apple-bg-primary) !important;
 }
 
-:deep(.n-input) {
-  width: 100%;
+:deep(.n-input .n-input__input-el) {
+  color: var(--apple-text-primary) !important;
 }
-</style> 
+
+:deep(.n-form-item-label) {
+  color: var(--apple-text-primary) !important;
+}
+</style>
