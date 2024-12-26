@@ -3,9 +3,9 @@ import { ref, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { NMenu, NIcon, NButton } from 'naive-ui'
 import type { MenuOption, MenuGroupOption, MenuDividerOption } from 'naive-ui'
-import AppLogo from './AppLogo.vue'
-import ThemeToggle from './ThemeToggle.vue'
-import { useAuth } from '../composables/useAuth'
+import AppLogo from '@/components/AppLogo.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
+import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
 const route = useRoute()

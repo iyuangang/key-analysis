@@ -25,8 +25,8 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { NCard, NForm, NFormItem, NInput, NButton, useMessage } from 'naive-ui'
-import { useAuth } from '../composables/useAuth'
-import AuthLayout from '../layouts/AuthLayout.vue'
+import { useAuth } from '@/composables/useAuth'
+import AuthLayout from '@/layouts/AuthLayout.vue'
 
 const router = useRouter()
 const message = useMessage()

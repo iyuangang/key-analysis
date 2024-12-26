@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" rx="8" fill="currentColor" class="logo-bg"/>
+  <path d="M16 8C12.13 8 9 11.13 9 15V19L7 21V23H25V21L23 19V15C23 11.13 19.87 8 16 8ZM16 25C17.1 25 18 24.1 18 23H14C14 24.1 14.9 25 16 25Z" fill="var(--apple-bg-primary)" class="logo-fg"/>
+</svg> 

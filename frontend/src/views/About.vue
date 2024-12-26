@@ -1,52 +1,160 @@
-<script setup lang="ts">
-import { NCard, NSpace, NH1, NText, NDivider } from 'naive-ui'
-
-const features = [
-  {
-    title: '密钥分析',
-    description: '分析密钥的重复字母、递增序列、递减序列和特殊组合'
-  },
-  {
-    title: '实时评分',
-    description: '对密钥进行综合评分，阈值400分为高分密钥'
-  },
-  {
-    title: '数据可视化',
-    description: '直观展示密钥分析结果和统计数据'
-  }
-]
-</script>
-
 <template>
-  <div class="about-container">
-    <NSpace vertical size="large">
-      <NH1>关于密钥分析系统</NH1>
+  <div class="about-page">
+    <div class="about-content">
+      <h2 class="about-title">关于密钥分析系统</h2>
+      <p class="about-description">
+        密钥分析系统是一个专业的密钥管理和分析工具，旨在帮助用户更好地管理和分析密钥使用情况。
+      </p>
 
-      <NCard>
-        <NText>
-          密钥分析系统是一个专业的密钥质量评估平台，通过多维度分析帮助用户评估和优化密钥质量。
-          系统采用先进的评分算法，从重复字母、字母序列、特殊组合等多个维度进行分析。
-        </NText>
-      </NCard>
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="i-mdi:shield-check text-2xl" />
+          <h3>安全可靠</h3>
+          <p>采用先进的加密技术，确保密钥数据的安全性</p>
+        </div>
+        <div class="feature-item">
+          <div class="i-mdi:chart-box text-2xl" />
+          <h3>数据分析</h3>
+          <p>提供全面的数据分析功能，帮助优化密钥使用</p>
+        </div>
+        <div class="feature-item">
+          <div class="i-mdi:account-group text-2xl" />
+          <h3>多用户支持</h3>
+          <p>支持多用户协同工作，权限管理灵活</p>
+        </div>
+      </div>
 
-      <NDivider>核心功能</NDivider>
+      <div class="version-info">
+        <h3>系统信息</h3>
+        <p>版本：1.0.0</p>
+        <p>最后更新：2024-01-20</p>
+      </div>
 
-      <NSpace>
-        <NCard v-for="feature in features" :key="feature.title" style="width: 300px">
-          <template #header>
-            <strong>{{ feature.title }}</strong>
-          </template>
-          {{ feature.description }}
-        </NCard>
-      </NSpace>
-    </NSpace>
+      <div class="contact-info">
+        <h3>联系我们</h3>
+        <p>如有问题或建议，请通过以下方式联系我们：</p>
+        <ul>
+          <li>邮箱：support@example.com</li>
+          <li>电话：400-123-4567</li>
+        </ul>
+      </div>
+    </div>
   </div>
 </template>
 
+<script setup lang="ts">
+defineOptions({
+  name: 'AboutPage'
+})
+</script>
+
 <style scoped>
-.about-container {
-  padding: 24px;
-  max-width: 1200px;
+.about-page {
+  padding: 2rem;
+  max-width: 800px;
   margin: 0 auto;
+}
+
+.about-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.about-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--apple-text-primary);
+  margin-bottom: 1rem;
+}
+
+.about-description {
+  font-size: 1.125rem;
+  color: var(--apple-text-secondary);
+  line-height: 1.6;
+}
+
+.feature-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin: 2rem 0;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem;
+  background: var(--apple-bg-secondary);
+  border-radius: 1rem;
+  border: 1px solid var(--apple-border);
+  transition: all 0.2s ease;
+}
+
+.feature-item:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--apple-shadow);
+}
+
+.feature-item h3 {
+  margin: 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--apple-text-primary);
+}
+
+.feature-item p {
+  color: var(--apple-text-secondary);
+  line-height: 1.5;
+}
+
+.version-info,
+.contact-info {
+  padding: 1.5rem;
+  background: var(--apple-bg-secondary);
+  border-radius: 1rem;
+  border: 1px solid var(--apple-border);
+}
+
+.version-info h3,
+.contact-info h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--apple-text-primary);
+  margin-bottom: 1rem;
+}
+
+.version-info p,
+.contact-info p {
+  color: var(--apple-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.contact-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0;
+}
+
+.contact-info li {
+  color: var(--apple-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .about-page {
+    padding: 1rem;
+  }
+
+  .feature-list {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .feature-item {
+    padding: 1.5rem;
+  }
 }
 </style>

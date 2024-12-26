@@ -13,20 +13,40 @@
       const mode = theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
       const root = document.documentElement;
 
+      // 预定义的主题变量映射
+      const themeVariables = {
+        light: {
+          'bg-primary': 'var(--apple-bg-primary-light)',
+          'bg-secondary': 'var(--apple-bg-secondary-light)',
+          'text-primary': 'var(--apple-text-primary-light)',
+          'text-secondary': 'var(--apple-text-secondary-light)',
+          'border': 'var(--apple-border-light)',
+          'card-bg': 'var(--apple-card-bg-light)',
+          'hover-bg': 'var(--apple-hover-bg-light)',
+          'sidebar-bg': 'var(--apple-sidebar-bg-light)',
+          'shadow': 'var(--apple-shadow-md)'
+        },
+        dark: {
+          'bg-primary': 'var(--apple-bg-primary-dark)',
+          'bg-secondary': 'var(--apple-bg-secondary-dark)',
+          'text-primary': 'var(--apple-text-primary-dark)',
+          'text-secondary': 'var(--apple-text-secondary-dark)',
+          'border': 'var(--apple-border-dark)',
+          'card-bg': 'var(--apple-card-bg-dark)',
+          'hover-bg': 'var(--apple-hover-bg-dark)',
+          'sidebar-bg': 'var(--apple-sidebar-bg-dark)',
+          'shadow': 'var(--apple-shadow-dark-md)'
+        }
+      };
+
       // 设置主题属性
       root.setAttribute('data-theme', mode);
 
-      // 设置 CSS 变量
-      const suffix = mode === 'dark' ? '-dark' : '-light';
-      root.style.setProperty('--apple-bg-primary', `var(--apple-bg-primary${suffix})`);
-      root.style.setProperty('--apple-bg-secondary', `var(--apple-bg-secondary${suffix})`);
-      root.style.setProperty('--apple-text-primary', `var(--apple-text-primary${suffix})`);
-      root.style.setProperty('--apple-text-secondary', `var(--apple-text-secondary${suffix})`);
-      root.style.setProperty('--apple-border', `var(--apple-border${suffix})`);
-      root.style.setProperty('--apple-card-bg', `var(--apple-card-bg${suffix})`);
-      root.style.setProperty('--apple-hover-bg', `var(--apple-hover-bg${suffix})`);
-      root.style.setProperty('--apple-sidebar-bg', `var(--apple-sidebar-bg${suffix})`);
-      root.style.setProperty('--apple-shadow', `var(--apple-shadow${mode === 'dark' ? '-dark' : ''}-md)`);
+      // 批量更新 CSS 变量
+      const variables = themeVariables[mode];
+      Object.entries(variables).forEach(([key, value]) => {
+        root.style.setProperty(`--apple-${key}`, value);
+      });
     })();
   </script>
 </head>
