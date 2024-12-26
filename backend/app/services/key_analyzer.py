@@ -171,15 +171,15 @@ class KeyAnalyzer:
         result = await self.db.execute(current_query)
         
         current_df = pd.DataFrame([{
-            "id": row.id,
+                    "id": row.id,
             "created_at": row.created_at,
-            "fingerprint": row.fingerprint,
-            "repeat_letter_score": row.repeat_letter_score,
-            "increasing_letter_score": row.increasing_letter_score,
-            "decreasing_letter_score": row.decreasing_letter_score,
-            "magic_letter_score": row.magic_letter_score,
-            "score": row.score,
-            "unique_letters_count": row.unique_letters_count,
+                    "fingerprint": row.fingerprint,
+                    "repeat_letter_score": row.repeat_letter_score,
+                    "increasing_letter_score": row.increasing_letter_score,
+                    "decreasing_letter_score": row.decreasing_letter_score,
+                    "magic_letter_score": row.magic_letter_score,
+                    "score": row.score,
+                    "unique_letters_count": row.unique_letters_count,
         } for row in result.scalars().all()])
 
         if current_df.empty:
@@ -192,15 +192,15 @@ class KeyAnalyzer:
             )
             result = await self.db.execute(previous_query)
             previous_df = pd.DataFrame([{
-                "id": row.id,
-                "created_at": row.created_at,
-                "fingerprint": row.fingerprint,
-                "repeat_letter_score": row.repeat_letter_score,
-                "increasing_letter_score": row.increasing_letter_score,
-                "decreasing_letter_score": row.decreasing_letter_score,
-                "magic_letter_score": row.magic_letter_score,
-                "score": row.score,
-                "unique_letters_count": row.unique_letters_count,
+                        "id": row.id,
+                        "created_at": row.created_at,
+                        "fingerprint": row.fingerprint,
+                        "repeat_letter_score": row.repeat_letter_score,
+                        "increasing_letter_score": row.increasing_letter_score,
+                        "decreasing_letter_score": row.decreasing_letter_score,
+                        "magic_letter_score": row.magic_letter_score,
+                        "score": row.score,
+                        "unique_letters_count": row.unique_letters_count,
             } for row in result.scalars().all()])
         else:
             previous_df = current_df

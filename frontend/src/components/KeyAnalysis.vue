@@ -1,7 +1,7 @@
 <template>
   <div class="analysis-container">
     <div class="filter-container">
-      <n-space align="center">
+      <n-space align="center" :wrap="true" :size="[8, 12]">
         <n-radio-group v-model:value="dateRange" size="small">
           <n-radio-button value="today">今日</n-radio-button>
           <n-radio-button value="custom">自定义</n-radio-button>
@@ -27,8 +27,14 @@
       </n-space>
     </div>
 
-    <n-grid :x-gap="24" :y-gap="24" :cols="4">
-      <n-grid-item v-for="stat in summaryStats" :key="stat.title">
+    <n-grid 
+      :x-gap="12" 
+      :y-gap="12" 
+      :cols="4"
+      :item-responsive="true"
+      responsive="screen"
+    >
+      <n-grid-item span="0:4 768:2 1024:1" v-for="stat in summaryStats" :key="stat.title">
         <n-card class="stat-card">
           <div class="stat-title">{{ stat.title }}</div>
           <div class="stat-value">{{ stat.value }}</div>
@@ -43,20 +49,32 @@
       </n-grid-item>
     </n-grid>
 
-    <div class="charts-container">
-      <div class="chart-wrapper">
-        <div ref="scoreDistChart" class="chart"></div>
-      </div>
-      <div class="chart-wrapper">
-        <div ref="correlationChart" class="chart"></div>
-      </div>
-      <div class="chart-wrapper">
-        <div ref="trendChart" class="chart"></div>
-      </div>
-      <div class="chart-wrapper">
-        <div ref="scoreTypesChart" class="chart"></div>
-      </div>
-    </div>
+    <n-grid :x-gap="12" :y-gap="12" :cols="1" :item-responsive="true" responsive="screen">
+      <n-grid-item span="1">
+        <div class="chart-wrapper">
+          <div class="chart-title">得分分布</div>
+          <div ref="scoreDistChart" class="chart"></div>
+        </div>
+      </n-grid-item>
+      <n-grid-item span="1">
+        <div class="chart-wrapper">
+          <div class="chart-title">指标相关性</div>
+          <div ref="correlationChart" class="chart"></div>
+        </div>
+      </n-grid-item>
+      <n-grid-item span="1">
+        <div class="chart-wrapper">
+          <div class="chart-title">得分趋势</div>
+          <div ref="trendChart" class="chart"></div>
+        </div>
+      </n-grid-item>
+      <n-grid-item span="1">
+        <div class="chart-wrapper">
+          <div class="chart-title">各类型得分分布</div>
+          <div ref="scoreTypesChart" class="chart"></div>
+        </div>
+      </n-grid-item>
+    </n-grid>
 
     <div class="tables-container">
       <DataTable 
@@ -884,81 +902,205 @@ const handleError = (error: any) => {
 
 <style scoped>
 .analysis-container {
-  padding: 20px;
-}
-
-.charts-container {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-  margin: 24px 0;
-}
-
-.chart-wrapper {
-  background: #fff;
-  border-radius: 8px;
-  padding: 16px;
-  transition: all 0.3s ease;
-}
-
-.chart-wrapper:hover {
-  transform: translateY(-2px);
-}
-
-.chart {
-  height: 400px;
-}
-
-.tables-container {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-}
-
-.stat-title {
-  color: var(--n-text-color-3);
-  font-size: 14px;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  margin: 10px 0;
-  color: var(--n-text-color);
-}
-
-.stat-trend {
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.stat-trend.up {
-  color: var(--n-success-color);
-}
-
-.stat-trend.down {
-  color: var(--n-error-color);
-}
-
-@media (max-width: 1200px) {
-  .charts-container,
-  .tables-container {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  :deep(.n-grid) {
-    --n-cols: 1 !important;
-  }
+  width: 100%;
 }
 
 .filter-container {
   margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-radius: 14px;
   padding: 16px;
-  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.stat-card {
+  height: 100%;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+.stat-title {
+  font-size: 13px;
+  color: #86868b;
+  letter-spacing: -0.2px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 8px 0;
+  background: linear-gradient(135deg, #1a1a1a 0%, #434343 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+
+.stat-trend {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: -0.2px;
+}
+
+.stat-trend.up {
+  color: #1d9d74;
+}
+
+.stat-trend.down {
+  color: #ff3b30;
+}
+
+.chart-wrapper {
+  width: 100%;
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chart-wrapper:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+.chart-title {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #1a1a1a 0%, #434343 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+
+.chart {
+  width: 100%;
+  height: 400px;
   border-radius: 8px;
 }
+
+.tables-container {
+  display: grid;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+:deep(.n-button) {
+  border-radius: 18px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+}
+
+:deep(.n-button:not(.n-button--disabled):active) {
+  transform: scale(0.96);
+}
+
+:deep(.n-radio-button) {
+  border-radius: 16px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+}
+
+:deep(.n-card) {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.n-card:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 768px) {
+  .filter-container {
+    margin-bottom: 16px;
+    padding: 12px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  .chart-title {
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+
+  .chart {
+    height: 260px;
+  }
+
+  .chart-wrapper {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  :deep(.n-data-table .n-data-table-td) {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  :deep(.n-data-table-th) {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  :deep(.n-button) {
+    font-size: 13px;
+  }
+
+  :deep(.n-radio-button) {
+    font-size: 13px;
+  }
+
+  /* 优化移动端图表显示 */
+  :deep(.echarts) {
+    overflow: hidden;
+  }
+
+  :deep(.echarts-tooltip) {
+    max-width: 80vw;
+    white-space: pre-wrap;
+  }
+}
+
+/* 添加动画效果 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
 </style> 
+
