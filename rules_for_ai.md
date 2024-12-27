@@ -211,3 +211,37 @@ VITE_API_BASE_URL=http://localhost:8000
 - Integration tests required
 - Performance tests required
 - Security tests required 
+
+## Mobile Sidebar Design Rules
+
+### Layout Structure
+- Use `main-layout` as root container with `:class="{ 'sidebar-open': isSidebarOpen }"`
+- `AppSidebar` should be fixed positioned, controlled by `transform`
+- Include a separate `sidebar-overlay` element for mobile mask effect
+
+### Responsive Design
+Desktop (> 768px):
+- Fixed sidebar width: 240px
+- Main content margin-left: 240px
+- No overlay mask
+
+Mobile (≤ 768px):
+- Sidebar hidden by default (transform: translateX(-100%))
+- Main content margin-left: 0
+- Show menu button
+- Show overlay mask when open
+
+### Interaction
+- Control sidebar via top menu button on mobile
+- Click overlay to close sidebar
+- Check and adapt layout on window resize
+
+### Transitions
+- Use transform transition for sidebar sliding
+- Use opacity and visibility transition for overlay
+- Transition margin-left for main content
+
+### State Management
+- Use `isMobile` to control mobile view
+- Use `isSidebarOpen` to control sidebar state
+- Handle window resize in `onMounted` and `onUnmounted` 
