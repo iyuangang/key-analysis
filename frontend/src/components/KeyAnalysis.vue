@@ -7,33 +7,15 @@
           <n-radio-button value="custom">自定义</n-radio-button>
           <n-radio-button value="all">全部</n-radio-button>
         </n-radio-group>
-        <n-date-picker
-          v-if="dateRange === 'custom'"
-          v-model:value="customDateRange"
-          type="daterange"
-          :disabled="dateRange !== 'custom'"
-          clearable
-          size="small"
-          :is-date-disabled="disableFutureDates"
-        />
-        <n-button 
-          size="small" 
-          type="primary"
-          :loading="loading"
-          @click="refreshData"
-        >
+        <n-date-picker v-if="dateRange === 'custom'" v-model:value="customDateRange" type="daterange"
+          :disabled="dateRange !== 'custom'" clearable size="small" :is-date-disabled="disableFutureDates" />
+        <n-button size="small" type="primary" :loading="loading" @click="refreshData">
           刷新
         </n-button>
       </n-space>
     </div>
 
-    <n-grid 
-      :x-gap="12" 
-      :y-gap="12" 
-      :cols="4"
-      :item-responsive="true"
-      responsive="screen"
-    >
+    <n-grid :x-gap="12" :y-gap="12" :cols="4" :item-responsive="true" responsive="screen">
       <n-grid-item span="0:4 768:2 1024:1" v-for="stat in summaryStats" :key="stat.title">
         <n-card class="stat-card">
           <div class="stat-title">{{ stat.title }}</div>
@@ -77,14 +59,8 @@
     </n-grid>
 
     <div class="tables-container">
-      <DataTable 
-        title="最近24小时生成的密钥" 
-        :data="recentKeys" 
-      />
-      <DataTable 
-        title="得分最高的密钥(>400分)" 
-        :data="highScoreKeys" 
-      />
+      <DataTable title="最近24小时生成的密钥" :data="recentKeys" />
+      <DataTable title="得分最高的密钥(>400分)" :data="highScoreKeys" />
     </div>
   </div>
 </template>
@@ -96,7 +72,7 @@ import {
   ArrowUpOutlined as TrendUpOutlined,
   ArrowDownOutlined as TrendDownOutlined
 } from '@vicons/antd'
-import { 
+import {
   useMessage,
   NGrid,
   NGridItem,
@@ -163,7 +139,7 @@ const loading = ref(false)
 const actualDateRange = computed(() => {
   const now = dayjs().tz(TIMEZONE)
   const today = now.startOf('day')
-  
+
   debug.log('Calculating date range:', {
     now: {
       timestamp: now.valueOf(),
@@ -176,7 +152,7 @@ const actualDateRange = computed(() => {
       timezone: TIMEZONE
     }
   })
-  
+
   switch (dateRange.value) {
     case 'today':
       return {
@@ -188,7 +164,7 @@ const actualDateRange = computed(() => {
         const [start, end] = customDateRange.value
         const startDate = dayjs(start).tz(TIMEZONE).startOf('day')
         const endDate = dayjs(end).tz(TIMEZONE).endOf('day')
-        
+
         debug.log('Custom date range:', {
           input: {
             start,
@@ -205,7 +181,7 @@ const actualDateRange = computed(() => {
             }
           }
         })
-        
+
         return {
           start: startDate.valueOf(),
           end: endDate.valueOf()
@@ -232,13 +208,13 @@ const refreshData = async () => {
   try {
     const range = actualDateRange.value
     debug.log('Fetching data with range:', range)
-    
+
     const [recentData, highScoreData, statsData] = await Promise.all([
       getRecentKeys(range),
       getHighScoreKeys(range),
       getStatistics(range)
     ])
-    
+
     debug.log('Received data:', {
       recentData,
       highScoreData,
@@ -252,14 +228,14 @@ const refreshData = async () => {
     } else {
       recentKeys.value = recentData
     }
-    
+
     if (!highScoreData || !Array.isArray(highScoreData)) {
       debug.warn('Invalid high score keys data:', highScoreData)
       highScoreKeys.value = []
     } else {
       highScoreKeys.value = highScoreData
     }
-    
+
     if (statsData && typeof statsData === 'object') {
       debug.log('Processing stats data:', statsData)
       initCharts(statsData)
@@ -346,7 +322,7 @@ const initCharts = (statsData: any) => {
     const scoreChart = echarts.init(scoreDistChart.value)
     const scoreStats = statsData.score_distribution
     const binWidth = scoreStats.bins[1] - scoreStats.bins[0]
-    
+
     scoreChart.setOption({
       title: {
         text: '得分分布',
@@ -369,7 +345,7 @@ const initCharts = (statsData: any) => {
         axisPointer: {
           type: 'shadow'
         },
-        formatter: function(params: any) {
+        formatter: function (params: any) {
           const value = params[0].value
           const start = Math.round(scoreStats.bins[params[0].dataIndex])
           const end = Math.round(start + binWidth)
@@ -439,7 +415,7 @@ const initCharts = (statsData: any) => {
           {
             name: '平均值',
             xAxis: Math.round(scoreStats.mean),
-            lineStyle: { 
+            lineStyle: {
               color: '#ee6666',
               width: 2
             }
@@ -447,7 +423,7 @@ const initCharts = (statsData: any) => {
           {
             name: '中位数',
             xAxis: Math.round(scoreStats.median),
-            lineStyle: { 
+            lineStyle: {
               color: '#5470c6',
               width: 2
             }
@@ -455,7 +431,7 @@ const initCharts = (statsData: any) => {
           {
             name: 'Q1',
             xAxis: Math.round(scoreStats.q1),
-            lineStyle: { 
+            lineStyle: {
               color: '#91cc75',
               type: 'dashed',
               width: 1.5
@@ -464,7 +440,7 @@ const initCharts = (statsData: any) => {
           {
             name: 'Q3',
             xAxis: Math.round(scoreStats.q3),
-            lineStyle: { 
+            lineStyle: {
               color: '#91cc75',
               type: 'dashed',
               width: 1.5
@@ -473,7 +449,7 @@ const initCharts = (statsData: any) => {
           {
             name: '标准差',
             xAxis: Math.round(scoreStats.mean + scoreStats.std),
-            lineStyle: { 
+            lineStyle: {
               color: '#909399',
               type: 'dashed',
               width: 1.5
@@ -704,10 +680,10 @@ const initCharts = (statsData: any) => {
     // 得分趋势图
     const trendChartInstance = echarts.init(trendChart.value)
     const timeFormat = statsData.trends.time_format || 'YYYY-MM-DD HH:mm'
-    
+
     // 处理趋势数据
     const validTrendData = generateTrendData(statsData)
-    
+
     trendChartInstance.setOption({
       title: {
         text: '得分趋势',
@@ -715,11 +691,11 @@ const initCharts = (statsData: any) => {
       },
       tooltip: {
         trigger: 'axis',
-        formatter: function(params: any) {
+        formatter: function (params: any) {
           const time = params[0].axisValue
           return [
             `时间: ${dayjs(time).format(timeFormat)}`,
-            ...params.map((param: any) => 
+            ...params.map((param: any) =>
               `${param.seriesName}: ${param.value[1]}`
             )
           ].join('<br/>')
@@ -728,7 +704,7 @@ const initCharts = (statsData: any) => {
       xAxis: {
         type: 'time',
         axisLabel: {
-          formatter: function(value: number) {
+          formatter: function (value: number) {
             return dayjs(value).format(timeFormat)
           }
         },
@@ -753,7 +729,7 @@ const initCharts = (statsData: any) => {
           name: '得分',
           position: 'left',
           min: 0,
-          max: function(value: any) {
+          max: function (value: any) {
             return Math.ceil(value.max * 1.1)
           },
           axisLine: {
@@ -772,7 +748,7 @@ const initCharts = (statsData: any) => {
           name: '数量',
           position: 'right',
           min: 0,
-          max: function(value: any) {
+          max: function (value: any) {
             return Math.ceil(value.max * 1.1)
           },
           axisLine: {
@@ -842,7 +818,7 @@ const initCharts = (statsData: any) => {
     // 在关键点添加数据检查和日志
     debug.log('Summary Stats:', statsData.summary_stats)
     debug.log('Trends Data:', statsData.trends)
-    
+
     // 数据验证
     if (!statsData.trends?.avg_scores?.length) {
       console.warn('No trend data available')
@@ -1102,5 +1078,4 @@ const handleError = (error: any) => {
   opacity: 0;
   transform: translateY(20px);
 }
-</style> 
-
+</style>
