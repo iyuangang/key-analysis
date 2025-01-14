@@ -274,4 +274,59 @@ export const getStatistics = (dateRange: { start: number; end: number } | null =
   }
 
   return api.get('/statistics', { params })
+}
+
+interface MaskOrdersRequest {
+  type: 'orderId' | 'productId'
+  ids: string[]
+}
+
+interface ModifyOrderRequest {
+  type: 'orderId' | 'productId'
+  id: string
+  changes: {
+    amount?: number
+    customerName?: string
+    customerId?: string
+    idType?: string
+  }
+}
+
+interface OperationResult {
+  success: boolean
+  message: string
+  affectedRows: number
+  details?: Record<string, any>
+}
+
+export async function maskOrders(params: MaskOrdersRequest): Promise<OperationResult> {
+  const response = await fetch('/api/orders/mask', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(params),
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return await response.json()
+}
+
+export async function modifyOrder(params: ModifyOrderRequest): Promise<OperationResult> {
+  const response = await fetch('/api/orders/modify', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(params),
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return await response.json()
 } 

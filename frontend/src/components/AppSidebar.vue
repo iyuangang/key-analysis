@@ -31,6 +31,11 @@ const menuOptions: MenuItem[] = [
     icon: renderIcon('i-carbon-chart-line')
   },
   {
+    label: '订单管理',
+    key: 'orders',
+    icon: renderIcon('i-carbon-document')
+  },
+  {
     label: '个人中心',
     key: 'user',
     icon: renderIcon('i-carbon-user-profile')

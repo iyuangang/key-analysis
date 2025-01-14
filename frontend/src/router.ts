@@ -76,6 +76,15 @@ const routes: RouteRecordRaw[] = [
           requiresAuth: true,
           title: '个人中心'
         }
+      },
+      {
+        path: 'orders',
+        name: 'orders',
+        component: () => import('./components/OrderManagement.vue'),
+        meta: {
+          requiresAuth: true,
+          title: '订单管理'
+        }
       }
     ]
   }
